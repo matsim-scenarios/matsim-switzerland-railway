@@ -10,8 +10,8 @@
     <description>MATSim Switzerland Railway scenario</description>
 
     <properties>
-        <!-- <matsim.version>16.0-2024w13</matsim.version> -->
-        <matsim.version>15.0</matsim.version>
+        <matsim.version>16.0-2024w13</matsim.version>
+        <!-- <matsim.version>15.0</matsim.version> -->
         <log4j.version>2.20.0</log4j.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -70,12 +70,12 @@
             <artifactId>assertj-core</artifactId>
             <version>3.24.2</version>
         </dependency>
-		
-		<dependency>
-        	<groupId>org.matsim</groupId>
-        	<artifactId>pt2matsim</artifactId>
-        	<version>23.4</version>
-    	</dependency>
+        
+        <dependency>
+    		<groupId>ch.sbb.matsim.contrib</groupId>
+    		<artifactId>railsim</artifactId>
+			<version>${matsim.version}</version>
+		</dependency>
 
     </dependencies>
     
