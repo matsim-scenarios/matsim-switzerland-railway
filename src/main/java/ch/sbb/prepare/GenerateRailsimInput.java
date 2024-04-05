@@ -203,9 +203,9 @@ public final class GenerateRailsimInput {
 		PublicTransitMappingConfigGroup ptmConfig = ConfigUtils.addOrGetModule(config, PublicTransitMappingConfigGroup.class);
 
 		ptmConfig.setInputNetworkFile(MATSIM_INPUT + "network_osm.xml.gz");
-		ptmConfig.setOutputNetworkFile(MATSIM_INPUT + "network_multimodal_final.xml.gz");
+		ptmConfig.setOutputNetworkFile(MATSIM_INPUT + "network_final.xml.gz");
 		ptmConfig.setOutputScheduleFile(MATSIM_INPUT + "schedule_final.xml.gz");
-		ptmConfig.setOutputStreetNetworkFile(MATSIM_INPUT + "network_streets_final.xml.gz");
+//		ptmConfig.setOutputStreetNetworkFile(MATSIM_INPUT + "network_streets_final.xml.gz");
 		ptmConfig.setInputScheduleFile(MATSIM_INPUT + "schedule_gtfs_filtered_trimmed.xml.gz");
 		ptmConfig.setScheduleFreespeedModes(CollectionUtils.stringToSet("rail, light_rail"));
 		// Save the mapping config

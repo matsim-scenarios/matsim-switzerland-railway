@@ -1,6 +1,7 @@
 # Add own ignores on top, don't edit the template
 
-original_data/gtfs/gtfs_fp2024_2024-03-20_04-15.zip
+original_data/gtfs/*.zip
+original_data/gtfs/
 original_data/osm/switzerland_railways.osm
 
 # Common files to ignore when working with MATSim
