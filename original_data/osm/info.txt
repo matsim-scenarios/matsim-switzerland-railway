@@ -1,0 +1,8 @@
+1. Download the OSM data from here: https://download.geofabrik.de/europe/switzerland.html
+
+If the file is too large:
+1.1 Download osmosis: https://wiki.openstreetmap.org/wiki/Osmosis
+1.2 Process the OSM data: 
+osmosis --rb file=switzerland-latest.osm.pbf --tf accept-ways railway=* --used-node --wx switzerland_railways.osm
+
+2. Put the *.osm file into this directory.

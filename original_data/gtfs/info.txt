@@ -1,0 +1,2 @@
+1. Download the GTFS file from here: https://opentransportdata.swiss/en/group/timetables-gtfs
+2. Put the zip file into this directory.
