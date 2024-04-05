@@ -19,7 +19,12 @@
 
 package ch.sbb.run;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.NetworkWriter;
+import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
@@ -27,9 +32,11 @@ import org.matsim.core.controler.OutputDirectoryHierarchy;
 import org.matsim.core.scenario.ScenarioUtils;
 
 import ch.sbb.matsim.contrib.railsim.RailsimModule;
+import ch.sbb.matsim.contrib.railsim.RailsimUtils;
 import ch.sbb.matsim.contrib.railsim.qsimengine.RailsimQSimModule;
 
-public final class RunRailsimExample {
+public final class RunSwitzerlandRailway {
+    private static final Logger log = LogManager.getLogger(RunSwitzerlandRailway.class);
 
 	public static void main(String[] args) {
 
@@ -45,14 +52,16 @@ public final class RunRailsimExample {
 		
 		Scenario scenario = ScenarioUtils.loadScenario(config);
 		
+		// set some train attributes which are used by the railsim engine
 		scenario.getTransitVehicles().getVehicleTypes().values().forEach(vehicle -> {
-			vehicle.setMaximumVelocity(27.778).setLength(1000.);
+			vehicle.setMaximumVelocity(27.778).setLength(500.);
 		});
 		
-//		scenario.getNetwork().getLinks().values().forEach(link -> {
-//			link.getAttributes().putAttribute(RailsimUtils.LINK_ATTRIBUTE_CAPACITY, 999);
-//			});
-		
+		// set some network attributes which are used by the railsim engine
+		for (Link link : scenario.getNetwork().getLinks().values()) {
+			RailsimUtils.setTrainCapacity(link, 1);
+		}
+				
 		Controler controler = new Controler(scenario);
 
 		controler.addOverridingModule(new RailsimModule());
@@ -61,6 +70,8 @@ public final class RunRailsimExample {
 		controler.configureQSimComponents(components -> new RailsimQSimModule().configure(components));
 
 		controler.run();
+		
+		log.info("Done.");
 	}
 
 }
