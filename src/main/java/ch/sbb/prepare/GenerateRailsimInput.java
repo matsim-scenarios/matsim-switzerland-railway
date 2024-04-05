@@ -45,18 +45,35 @@ import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
 
 public final class GenerateRailsimInput {
 
-	private static final String ORIGINAL_DATA = "original_data/";
-	private static final String MATSIM_INPUT = "matsim_input/";
-
-	private static final String inputOSM = ORIGINAL_DATA + "osm/";
-	private static final String inputGTFS = ORIGINAL_DATA + "gtfs/";
-
+	// input files
+	private static final String INPUT_OSM_FILE = "original_data/osm/switzerland_railways.osm";
+	private static final String INPUT_GTFS_FILE = "original_data/gtfs/gtfs_fp2024_2024-03-20_04-15.zip";
+    private static final String areaShpFile = "original_data/shp/olten/olten.shp";
 	private static final String EPSG2056 = "EPSG:2056";
 	
-    private static final String areaShpFile = ORIGINAL_DATA + "shp/olten/olten.shp";
-
+	// final matsim input files
+	private static final String MATSIM_INPUT = "matsim_input/";
+	private static final String VEHICLES_GTFS = MATSIM_INPUT + "transitVehicles.xml.gz";
+	private static final String NETWORK_FINAL = MATSIM_INPUT + "transitNetwork.xml.gz";
+	private static final String SCHEDULE_FINAL = MATSIM_INPUT + "transitSchedule.xml.gz";
+	
+	// intermediate files
+	private static final String MATSIM_INPUT_TMP = "matsim_input/tmp/";
+    
+	private static final String PT2MATSIM_OSM_CONVERTER_CONFIG_DEFAULT = MATSIM_INPUT_TMP + "pt2matsim_osm_converter_config_default.xml";
+	private static final String PT2MATSIM_OSM_CONVERTER_CONFIG = MATSIM_INPUT_TMP + "pt2matsim_osm_converter_config.xml";
+	private static final String PT2MATSIM_MAPPER_CONFIG_DEFAULT = MATSIM_INPUT_TMP + "pt2matsim_mapper_config_default.xml";
+	private static final String PT2MATSIM_MAPPER_CONFIG = MATSIM_INPUT_TMP + "pt2matsim_mapper_config_adjusted.xml";
+	
+	private static final String SCHEDULE_GTFS_FILTERED = MATSIM_INPUT_TMP + "schedule_gtfs_filtered.xml.gz";
+	private static final String SCHEDULE_GTFS_FILTERED_TRIMMED = MATSIM_INPUT_TMP + "schedule_gtfs_filtered_trimmed.xml.gz";
+	private static final String SCHEDULE_GTFS = MATSIM_INPUT_TMP + "schedule_gtfs.xml.gz";
+	private static final String NETWORK_OSM = MATSIM_INPUT_TMP + "network_osm.xml.gz";
+    
 	public static void main(String[] args) throws MalformedURLException {
-		prepare();
+
+		new File(MATSIM_INPUT).mkdirs();
+		new File(MATSIM_INPUT_TMP).mkdirs();
 
 		// 1. Convert a gtfs schedule to an unmapped transit schedule
 		gtfsToSchedule();
@@ -64,20 +81,16 @@ public final class GenerateRailsimInput {
 		trimSchedule();
 
 		// 2. Convert an osm map to a MATSim network
-		// create a config file (or adjust an existing one by hand)
-		createOsmConfigFile( MATSIM_INPUT + "OsmConverterConfig.xml" );
-		// Convert the OSM file using the config
-		Osm2MultimodalNetwork.main(new String[]{ MATSIM_INPUT + "OsmConverterConfig.xml" });
+		createOsmConfigFile( PT2MATSIM_OSM_CONVERTER_CONFIG );
+		Osm2MultimodalNetwork.main(new String[]{ PT2MATSIM_OSM_CONVERTER_CONFIG });
 
 		// 3. Map the schedule onto the network
-		// create a config file (or adjust an existing one by hand)
-		createMapperConfigFile(MATSIM_INPUT + "MapperConfigAdjusted.xml");
-		// Map the schedule using the config
-		PublicTransitMapper.main(new String[]{MATSIM_INPUT + "MapperConfigAdjusted.xml"});
+		createMapperConfigFile(PT2MATSIM_MAPPER_CONFIG);
+		PublicTransitMapper.main(new String[]{PT2MATSIM_MAPPER_CONFIG});
 	}
 
 	private static void trimSchedule() throws MalformedURLException {
-		TransitSchedule schedule = ScheduleTools.readTransitSchedule(MATSIM_INPUT + "schedule_gtfs_filtered.xml.gz");
+		TransitSchedule schedule = ScheduleTools.readTransitSchedule(SCHEDULE_GTFS_FILTERED);
 
 		List<PreparedGeometry> geometries = ShpGeometryUtils.loadPreparedGeometries(new File(areaShpFile).toURI().toURL());
 
@@ -94,7 +107,7 @@ public final class GenerateRailsimInput {
 		}
 		
 		ScheduleCleaner.removeNotUsedStopFacilities(schedule);
-		ScheduleTools.writeTransitSchedule(schedule, MATSIM_INPUT + "schedule_gtfs_filtered_trimmed.xml.gz");		
+		ScheduleTools.writeTransitSchedule(schedule, SCHEDULE_GTFS_FILTERED_TRIMMED);		
 	}
 	
 	private static boolean routeHasStopInArea(TransitRoute route, List<PreparedGeometry> geometries) {
@@ -105,14 +118,9 @@ public final class GenerateRailsimInput {
         }   
 		return false;	
 	}
-
-	/** Create output folder if not existing **/
-	public static void prepare() {
-		new File(MATSIM_INPUT).mkdirs();
-	}
 	
 	public static void filterSchedule() {
-		TransitSchedule schedule = ScheduleTools.readTransitSchedule(MATSIM_INPUT + "schedule_gtfs.xml.gz");
+		TransitSchedule schedule = ScheduleTools.readTransitSchedule(SCHEDULE_GTFS);
 
 		for(TransitLine transitLine : new HashSet<>(schedule.getTransitLines().values())) {
 			for(TransitRoute transitRoute : new HashSet<>(transitLine.getRoutes().values())) {
@@ -126,18 +134,16 @@ public final class GenerateRailsimInput {
 			if(transitLine.getName().startsWith("IC") ||
 					transitLine.getName().startsWith("IR") ||
 					transitLine.getName().startsWith("RE")) {
-				// keep
-				
+				// keep			
 			} else {
-				// remove
-				
+				// remove		
 				for(TransitRoute transitRoute : new HashSet<>(transitLine.getRoutes().values())) {
 					transitLine.removeRoute(transitRoute);
 				}
 			}
 		}
 		ScheduleCleaner.removeNotUsedStopFacilities(schedule);
-		ScheduleTools.writeTransitSchedule(schedule, MATSIM_INPUT + "schedule_gtfs_filtered.xml.gz");
+		ScheduleTools.writeTransitSchedule(schedule, SCHEDULE_GTFS_FILTERED);
 	}
 
 
@@ -150,16 +156,16 @@ public final class GenerateRailsimInput {
 	public static void gtfsToSchedule() {
 		String[] gtfsConverterArgs = new String[]{
 				// [0] gtfs zip file
-				inputGTFS + "gtfs_fp2024_2024-03-20_04-15.zip",
+				INPUT_GTFS_FILE,
 				// [1] which service ids should be used. One of the following:
 				//		dayWithMostTrips, date in the format yyyymmdd, , dayWithMostServices, all
 				"dayWithMostTrips",
 				// [2] the output coordinate system. Use WGS84 for no transformation.
 				EPSG2056,
 				// [3] output transit schedule file
-				MATSIM_INPUT + "schedule_gtfs.xml.gz",
+				SCHEDULE_GTFS,
 				// [4] output default vehicles file (optional)
-				MATSIM_INPUT + "vehicles_gtfs.xml.gz",
+				VEHICLES_GTFS,
 		};
 		Gtfs2TransitSchedule.main(gtfsConverterArgs);
 	}
@@ -170,22 +176,15 @@ public final class GenerateRailsimInput {
 	 *
 	 */
 	public static void createOsmConfigFile(String configFile) {
-		// Create a default createOsmConfigFile-Config:
-		CreateDefaultOsmConfig.main(new String[]{MATSIM_INPUT + "OsmConverterConfigDefault.xml"});
-
-		// Open the createOsmConfigFile Config and set the parameters to the required values
-		// (usually done manually by opening the config with a simple editor)
+		CreateDefaultOsmConfig.main(new String[]{PT2MATSIM_OSM_CONVERTER_CONFIG_DEFAULT});
 		Config osmConverterConfig = ConfigUtils.loadConfig(
-				MATSIM_INPUT + "OsmConverterConfigDefault.xml",
+				PT2MATSIM_OSM_CONVERTER_CONFIG_DEFAULT,
 				new OsmConverterConfigGroup());
-
 		OsmConverterConfigGroup osmConfig = ConfigUtils.addOrGetModule(osmConverterConfig, OsmConverterConfigGroup.class);
-		osmConfig.setOsmFile(inputOSM + "switzerland_railways.osm");
+		osmConfig.setOsmFile(INPUT_OSM_FILE);
 		osmConfig.setOutputCoordinateSystem(EPSG2056);
-		osmConfig.setOutputNetworkFile(MATSIM_INPUT + "network_osm.xml.gz");
+		osmConfig.setOutputNetworkFile(NETWORK_OSM);
 		osmConfig.setKeepPaths(true);
-
-		// Save the createOsmConfigFile config (usually done manually)
 		new ConfigWriter(osmConverterConfig).write(configFile);
 	}
 
@@ -193,23 +192,18 @@ public final class GenerateRailsimInput {
 	 * 	3. The core of the PT2MATSim-package is the mapping process of the schedule to the network.
 	 */
 	public static void createMapperConfigFile(String configFile) {
-		// Create a mapping config:
-		CreateDefaultPTMapperConfig.main(new String[]{ MATSIM_INPUT + "MapperConfigDefault.xml"});
-		// Open the mapping config and set the parameters to the required values
-		// (usually done manually by opening the config with a simple editor)
+		CreateDefaultPTMapperConfig.main(new String[]{ PT2MATSIM_MAPPER_CONFIG_DEFAULT});
 		Config config = ConfigUtils.loadConfig(
-				MATSIM_INPUT + "MapperConfigDefault.xml",
+				PT2MATSIM_MAPPER_CONFIG_DEFAULT,
 				PublicTransitMappingConfigGroup.createDefaultConfig());
 		PublicTransitMappingConfigGroup ptmConfig = ConfigUtils.addOrGetModule(config, PublicTransitMappingConfigGroup.class);
 
-		ptmConfig.setInputNetworkFile(MATSIM_INPUT + "network_osm.xml.gz");
-		ptmConfig.setOutputNetworkFile(MATSIM_INPUT + "network_final.xml.gz");
-		ptmConfig.setOutputScheduleFile(MATSIM_INPUT + "schedule_final.xml.gz");
+		ptmConfig.setInputNetworkFile(NETWORK_OSM);
+		ptmConfig.setOutputNetworkFile(NETWORK_FINAL);
+		ptmConfig.setOutputScheduleFile(SCHEDULE_FINAL);
 //		ptmConfig.setOutputStreetNetworkFile(MATSIM_INPUT + "network_streets_final.xml.gz");
-		ptmConfig.setInputScheduleFile(MATSIM_INPUT + "schedule_gtfs_filtered_trimmed.xml.gz");
+		ptmConfig.setInputScheduleFile(SCHEDULE_GTFS_FILTERED_TRIMMED);
 		ptmConfig.setScheduleFreespeedModes(CollectionUtils.stringToSet("rail, light_rail"));
-		// Save the mapping config
-		// (usually done manually)
 		new ConfigWriter(config).write(configFile);
 	}
 
