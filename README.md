@@ -43,6 +43,7 @@ The **MATSim input files, output files, analysis data and visualizations** are l
 (Requires either cloning or downloading the repository.)
 
 1. Set up the project in your IDE.
+1. Switch to the branch `main`
 1. Make sure the project is configured as maven project.
 1. Run the JAVA class `src/main/java/ch/sbb/run/RunSwitzerlandRailway.java`.
 1. "Open" the output directory.  You can drag files into VIA as was already done above.
