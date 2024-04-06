@@ -46,21 +46,29 @@ import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
 
 public final class GenerateRailsimInput {
 
-	// input files
+	// input osm and gtfs file
 	private static final String INPUT_OSM_FILE = "original_data/osm/switzerland_railways.osm";
 	private static final String INPUT_GTFS_FILE = "original_data/gtfs/gtfs_fp2024_2024-03-20_04-15.zip";
-    private static final String areaShpFileForTrimming = null;
+	
+	// optional: trim the schedule
+    // private static final String areaShpFileForTrimming = null;
     // private static final String areaShpFileForTrimming = "original_data/shp/olten/olten.shp";
-    private static final Set<String> transitLineNamePrefixesToKeep = CollectionUtils.stringToSet("IC,IR,RE");
+    private static final String areaShpFileForTrimming = "original_data/shp/switzerland/switzerland.shp";
+    
+    // optional: filter by line name prefix
+    // private static final Set<String> transitLineNamePrefixesToKeep = CollectionUtils.stringToSet("IC,IR,RE,S");
+    private static final Set<String> transitLineNamePrefixesToKeep = null;
+
 	private static final String EPSG2056 = "EPSG:2056";
 	
-	// final matsim input files
+	// matsim input files to write
 	private static final String MATSIM_INPUT = "matsim_input/";
 	private static final String VEHICLES_GTFS = MATSIM_INPUT + "transitVehicles.xml.gz";
 	private static final String NETWORK_FINAL = MATSIM_INPUT + "transitNetwork.xml.gz";
 	private static final String SCHEDULE_FINAL = MATSIM_INPUT + "transitSchedule.xml.gz";
 	
 	// intermediate files
+	
 	private static final String MATSIM_INPUT_TMP = "matsim_input/tmp/";
     
 	private static final String PT2MATSIM_OSM_CONVERTER_CONFIG_DEFAULT = MATSIM_INPUT_TMP + "pt2matsim_osm_converter_config_default.xml";
