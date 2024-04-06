@@ -22,6 +22,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.locationtech.jts.geom.prep.PreparedGeometry;
 import org.matsim.core.config.Config;
@@ -48,7 +49,9 @@ public final class GenerateRailsimInput {
 	// input files
 	private static final String INPUT_OSM_FILE = "original_data/osm/switzerland_railways.osm";
 	private static final String INPUT_GTFS_FILE = "original_data/gtfs/gtfs_fp2024_2024-03-20_04-15.zip";
-    private static final String areaShpFile = "original_data/shp/olten/olten.shp";
+    private static final String areaShpFileForTrimming = null;
+    // private static final String areaShpFileForTrimming = "original_data/shp/olten/olten.shp";
+    private static final Set<String> transitLineNamePrefixesToKeep = CollectionUtils.stringToSet("IC,IR,RE");
 	private static final String EPSG2056 = "EPSG:2056";
 	
 	// final matsim input files
@@ -92,18 +95,20 @@ public final class GenerateRailsimInput {
 	private static void trimSchedule() throws MalformedURLException {
 		TransitSchedule schedule = ScheduleTools.readTransitSchedule(SCHEDULE_GTFS_FILTERED);
 
-		List<PreparedGeometry> geometries = ShpGeometryUtils.loadPreparedGeometries(new File(areaShpFile).toURI().toURL());
+		if (areaShpFileForTrimming != null) {
+			List<PreparedGeometry> geometries = ShpGeometryUtils.loadPreparedGeometries(new File(areaShpFileForTrimming).toURI().toURL());
 
-		for (TransitLine transitLine : new HashSet<>(schedule.getTransitLines().values())) {
-			for(TransitRoute transitRoute : new HashSet<>(transitLine.getRoutes().values())) {
-				if (routeHasStopInArea(transitRoute, geometries)) {
-					// keep
-				} else {
-					// remove
-					transitLine.removeRoute(transitRoute);
+			for (TransitLine transitLine : new HashSet<>(schedule.getTransitLines().values())) {
+				for(TransitRoute transitRoute : new HashSet<>(transitLine.getRoutes().values())) {
+					if (routeHasStopInArea(transitRoute, geometries)) {
+						// keep
+					} else {
+						// remove
+						transitLine.removeRoute(transitRoute);
+					}
 				}
-			}
 
+			}
 		}
 		
 		ScheduleCleaner.removeNotUsedStopFacilities(schedule);
@@ -122,6 +127,7 @@ public final class GenerateRailsimInput {
 	public static void filterSchedule() {
 		TransitSchedule schedule = ScheduleTools.readTransitSchedule(SCHEDULE_GTFS);
 
+		// remove non-rail transit lines, e.g. buses, light-rail, ...
 		for(TransitLine transitLine : new HashSet<>(schedule.getTransitLines().values())) {
 			for(TransitRoute transitRoute : new HashSet<>(transitLine.getRoutes().values())) {
 				if(!transitRoute.getTransportMode().equals("rail")) {
@@ -130,18 +136,30 @@ public final class GenerateRailsimInput {
 			}
 		}
 		
-		for(TransitLine transitLine : new HashSet<>(schedule.getTransitLines().values())) {
-			if(transitLine.getName().startsWith("IC") ||
-					transitLine.getName().startsWith("IR") ||
-					transitLine.getName().startsWith("RE")) {
-				// keep			
-			} else {
-				// remove		
-				for(TransitRoute transitRoute : new HashSet<>(transitLine.getRoutes().values())) {
-					transitLine.removeRoute(transitRoute);
+		if (transitLineNamePrefixesToKeep == null || transitLineNamePrefixesToKeep.isEmpty()) {
+			// do not filter by line name prefix
+			
+		} else {
+			for(TransitLine transitLine : new HashSet<>(schedule.getTransitLines().values())) {
+				boolean lineToKeep = false;
+				for (String prefix : transitLineNamePrefixesToKeep) {
+					if (transitLine.getName().startsWith(prefix)) {
+						lineToKeep = true;
+						break;
+					}
+				}
+				
+				if(lineToKeep) {
+					// keep			
+				} else {
+					// remove		
+					for(TransitRoute transitRoute : new HashSet<>(transitLine.getRoutes().values())) {
+						transitLine.removeRoute(transitRoute);
+					}
 				}
 			}
 		}
+		
 		ScheduleCleaner.removeNotUsedStopFacilities(schedule);
 		ScheduleTools.writeTransitSchedule(schedule, SCHEDULE_GTFS_FILTERED);
 	}
@@ -203,8 +221,10 @@ public final class GenerateRailsimInput {
 		ptmConfig.setOutputScheduleFile(SCHEDULE_FINAL);
 //		ptmConfig.setOutputStreetNetworkFile(MATSIM_INPUT + "network_streets_final.xml.gz");
 		ptmConfig.setInputScheduleFile(SCHEDULE_GTFS_FILTERED_TRIMMED);
+		ptmConfig.setModesToKeepOnCleanUp(CollectionUtils.stringToSet("rail"));
 		ptmConfig.setScheduleFreespeedModes(CollectionUtils.stringToSet("rail, light_rail"));
 		new ConfigWriter(config).write(configFile);
+		
 	}
 
 }
