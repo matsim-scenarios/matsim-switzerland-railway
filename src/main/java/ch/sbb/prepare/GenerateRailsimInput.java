@@ -62,8 +62,8 @@ public final class GenerateRailsimInput {
     // private static final String areaShpFileForTrimming = "original_data/shp/switzerland/switzerland.shp";
     
     // optional: filter by line name prefix
-    // private static final Set<String> transitLineNamePrefixesToKeep = CollectionUtils.stringToSet("IC,IR,RE,S");
-    private static final Set<String> transitLineNamePrefixesToKeep = null;
+    private static final Set<String> transitLineNamePrefixesToKeep = CollectionUtils.stringToSet("IC");
+    // private static final Set<String> transitLineNamePrefixesToKeep = null;
 
 	private static final String EPSG2056 = "EPSG:2056";
 	
@@ -127,7 +127,7 @@ public final class GenerateRailsimInput {
 				}
 			}
 		}
-		
+				
 		ScheduleTools.writeTransitSchedule(schedule, SCHEDULE_FINAL);	
 		NetworkTools.writeNetwork(network, NETWORK_FINAL);
 		ScheduleTools.writeVehicles(vehicles, VEHICLES_FINAL);
@@ -263,8 +263,8 @@ public final class GenerateRailsimInput {
 		ptmConfig.setOutputNetworkFile(NETWORK_OSM_MAPPED);
 		ptmConfig.setOutputScheduleFile(SCHEDULE_GTFS_FILTERED_MAPPED);
 		ptmConfig.setInputScheduleFile(SCHEDULE_GTFS_FILTERED);
-		ptmConfig.setModesToKeepOnCleanUp(CollectionUtils.stringToSet("rail"));
-		ptmConfig.setScheduleFreespeedModes(CollectionUtils.stringToSet("rail, light_rail"));
+//		ptmConfig.setModesToKeepOnCleanUp(CollectionUtils.stringToSet("rail"));
+		ptmConfig.setScheduleFreespeedModes(CollectionUtils.stringToSet("rail"));
 		new ConfigWriter(config).write(configFile);
 		
 	}
