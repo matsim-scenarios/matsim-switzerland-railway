@@ -25,13 +25,16 @@ import java.util.List;
 import java.util.Set;
 
 import org.locationtech.jts.geom.prep.PreparedGeometry;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.ConfigWriter;
 import org.matsim.core.utils.collections.CollectionUtils;
+import org.matsim.pt.transitSchedule.api.Departure;
 import org.matsim.pt.transitSchedule.api.TransitLine;
 import org.matsim.pt.transitSchedule.api.TransitRoute;
-import org.matsim.pt.transitSchedule.api.TransitRouteStop;
 import org.matsim.pt.transitSchedule.api.TransitSchedule;
 import org.matsim.pt2matsim.config.OsmConverterConfigGroup;
 import org.matsim.pt2matsim.config.PublicTransitMappingConfigGroup;
@@ -40,9 +43,12 @@ import org.matsim.pt2matsim.run.CreateDefaultPTMapperConfig;
 import org.matsim.pt2matsim.run.Gtfs2TransitSchedule;
 import org.matsim.pt2matsim.run.Osm2MultimodalNetwork;
 import org.matsim.pt2matsim.run.PublicTransitMapper;
+import org.matsim.pt2matsim.tools.NetworkTools;
 import org.matsim.pt2matsim.tools.ScheduleTools;
 import org.matsim.pt2matsim.tools.debug.ScheduleCleaner;
 import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
+import org.matsim.vehicles.Vehicle;
+import org.matsim.vehicles.Vehicles;
 
 public final class GenerateRailsimInput {
 
@@ -52,8 +58,8 @@ public final class GenerateRailsimInput {
 	
 	// optional: trim the schedule
     // private static final String areaShpFileForTrimming = null;
-    // private static final String areaShpFileForTrimming = "original_data/shp/olten/olten.shp";
-    private static final String areaShpFileForTrimming = "original_data/shp/switzerland/switzerland.shp";
+    private static final String areaShpFileForTrimming = "original_data/shp/olten/olten.shp";
+    // private static final String areaShpFileForTrimming = "original_data/shp/switzerland/switzerland.shp";
     
     // optional: filter by line name prefix
     // private static final Set<String> transitLineNamePrefixesToKeep = CollectionUtils.stringToSet("IC,IR,RE,S");
@@ -63,7 +69,7 @@ public final class GenerateRailsimInput {
 	
 	// matsim input files to write
 	private static final String MATSIM_INPUT = "matsim_input/";
-	private static final String VEHICLES_GTFS = MATSIM_INPUT + "transitVehicles.xml.gz";
+	private static final String VEHICLES_FINAL = MATSIM_INPUT + "transitVehicles.xml.gz";
 	private static final String NETWORK_FINAL = MATSIM_INPUT + "transitNetwork.xml.gz";
 	private static final String SCHEDULE_FINAL = MATSIM_INPUT + "transitSchedule.xml.gz";
 	
@@ -75,12 +81,17 @@ public final class GenerateRailsimInput {
 	private static final String PT2MATSIM_OSM_CONVERTER_CONFIG = MATSIM_INPUT_TMP + "pt2matsim_osm_converter_config.xml";
 	private static final String PT2MATSIM_MAPPER_CONFIG_DEFAULT = MATSIM_INPUT_TMP + "pt2matsim_mapper_config_default.xml";
 	private static final String PT2MATSIM_MAPPER_CONFIG = MATSIM_INPUT_TMP + "pt2matsim_mapper_config_adjusted.xml";
-	
-	private static final String SCHEDULE_GTFS_FILTERED = MATSIM_INPUT_TMP + "schedule_gtfs_filtered.xml.gz";
-	private static final String SCHEDULE_GTFS_FILTERED_TRIMMED = MATSIM_INPUT_TMP + "schedule_gtfs_filtered_trimmed.xml.gz";
+
 	private static final String SCHEDULE_GTFS = MATSIM_INPUT_TMP + "schedule_gtfs.xml.gz";
+	private static final String SCHEDULE_GTFS_FILTERED = MATSIM_INPUT_TMP + "schedule_gtfs_filtered.xml.gz";
+	private static final String SCHEDULE_GTFS_FILTERED_MAPPED = MATSIM_INPUT_TMP + "schedule_gtfs_filtered_mapped.xml.gz";
+	private static final String SCHEDULE_GTFS_FILTERED_MAPPED_TRIMMED = MATSIM_INPUT_TMP + "schedule_gtfs_filtered_mapped_trimmed.xml.gz";
+
 	private static final String NETWORK_OSM = MATSIM_INPUT_TMP + "network_osm.xml.gz";
-    
+	private static final String NETWORK_OSM_MAPPED = MATSIM_INPUT_TMP + "network_osm_mapped.xml.gz";
+	
+	private static final String VEHICLES_GTFS = MATSIM_INPUT_TMP + "vehicles_gtfs.xml.gz";
+	
 	public static void main(String[] args) throws MalformedURLException {
 
 		new File(MATSIM_INPUT).mkdirs();
@@ -89,7 +100,6 @@ public final class GenerateRailsimInput {
 		// 1. Convert a gtfs schedule to an unmapped transit schedule
 		gtfsToSchedule();
 		filterSchedule();
-		trimSchedule();
 
 		// 2. Convert an osm map to a MATSim network
 		createOsmConfigFile( PT2MATSIM_OSM_CONVERTER_CONFIG );
@@ -98,17 +108,41 @@ public final class GenerateRailsimInput {
 		// 3. Map the schedule onto the network
 		createMapperConfigFile(PT2MATSIM_MAPPER_CONFIG);
 		PublicTransitMapper.main(new String[]{PT2MATSIM_MAPPER_CONFIG});
+		
+		trimSchedule();
+		writeFinalFiles();
+	}
+
+	private static void writeFinalFiles() {
+		TransitSchedule schedule = ScheduleTools.readTransitSchedule(SCHEDULE_GTFS_FILTERED_MAPPED_TRIMMED);
+		Network network = NetworkTools.readNetwork(NETWORK_OSM_MAPPED);
+		Vehicles vehicles = ScheduleTools.readVehicles(VEHICLES_GTFS);
+				
+		for (TransitLine line : schedule.getTransitLines().values()) {
+			for (TransitRoute route : line.getRoutes().values()) {
+				for (Departure dep : route.getDepartures().values()) {
+					Id<Vehicle> vehicleId = dep.getVehicleId();
+					Vehicle vehicle = vehicles.getVehicles().get(vehicleId);
+					vehicle.getAttributes().putAttribute("line_name", line.getName());
+				}
+			}
+		}
+		
+		ScheduleTools.writeTransitSchedule(schedule, SCHEDULE_FINAL);	
+		NetworkTools.writeNetwork(network, NETWORK_FINAL);
+		ScheduleTools.writeVehicles(vehicles, VEHICLES_FINAL);
 	}
 
 	private static void trimSchedule() throws MalformedURLException {
-		TransitSchedule schedule = ScheduleTools.readTransitSchedule(SCHEDULE_GTFS_FILTERED);
-
+		TransitSchedule schedule = ScheduleTools.readTransitSchedule(SCHEDULE_GTFS_FILTERED_MAPPED);
+		Network network = NetworkTools.readNetwork(NETWORK_OSM_MAPPED);
+		
 		if (areaShpFileForTrimming != null) {
 			List<PreparedGeometry> geometries = ShpGeometryUtils.loadPreparedGeometries(new File(areaShpFileForTrimming).toURI().toURL());
 
 			for (TransitLine transitLine : new HashSet<>(schedule.getTransitLines().values())) {
 				for(TransitRoute transitRoute : new HashSet<>(transitLine.getRoutes().values())) {
-					if (routeHasStopInArea(transitRoute, geometries)) {
+					if (routeHasLinkInArea(transitRoute, network, geometries)) {
 						// keep
 					} else {
 						// remove
@@ -120,12 +154,13 @@ public final class GenerateRailsimInput {
 		}
 		
 		ScheduleCleaner.removeNotUsedStopFacilities(schedule);
-		ScheduleTools.writeTransitSchedule(schedule, SCHEDULE_GTFS_FILTERED_TRIMMED);		
+		ScheduleTools.writeTransitSchedule(schedule, SCHEDULE_GTFS_FILTERED_MAPPED_TRIMMED);		
 	}
 	
-	private static boolean routeHasStopInArea(TransitRoute route, List<PreparedGeometry> geometries) {
-        for (TransitRouteStop stop : route.getStops()) {
-        	if (ShpGeometryUtils.isCoordInPreparedGeometries(stop.getStopFacility().getCoord(), geometries)) {
+	private static boolean routeHasLinkInArea(TransitRoute route, Network network, List<PreparedGeometry> geometries) {
+        for (Id<Link> id : route.getRoute().getLinkIds()) {
+        	Link link = network.getLinks().get(id);
+        	if (ShpGeometryUtils.isCoordInPreparedGeometries(link.getCoord(), geometries)) {
                 return true;
             }
         }   
@@ -225,10 +260,9 @@ public final class GenerateRailsimInput {
 		PublicTransitMappingConfigGroup ptmConfig = ConfigUtils.addOrGetModule(config, PublicTransitMappingConfigGroup.class);
 
 		ptmConfig.setInputNetworkFile(NETWORK_OSM);
-		ptmConfig.setOutputNetworkFile(NETWORK_FINAL);
-		ptmConfig.setOutputScheduleFile(SCHEDULE_FINAL);
-//		ptmConfig.setOutputStreetNetworkFile(MATSIM_INPUT + "network_streets_final.xml.gz");
-		ptmConfig.setInputScheduleFile(SCHEDULE_GTFS_FILTERED_TRIMMED);
+		ptmConfig.setOutputNetworkFile(NETWORK_OSM_MAPPED);
+		ptmConfig.setOutputScheduleFile(SCHEDULE_GTFS_FILTERED_MAPPED);
+		ptmConfig.setInputScheduleFile(SCHEDULE_GTFS_FILTERED);
 		ptmConfig.setModesToKeepOnCleanUp(CollectionUtils.stringToSet("rail"));
 		ptmConfig.setScheduleFreespeedModes(CollectionUtils.stringToSet("rail, light_rail"));
 		new ConfigWriter(config).write(configFile);
