@@ -58,8 +58,8 @@ public final class GenerateRailsimInput {
 	private static final String INPUT_GTFS_FILE = "original_data/gtfs/gtfs_fp2024_2024-03-20_04-15.zip";
 	
 	// optional: trim the schedule
-    private static final String areaShpFileForTrimming = null;
-    // private static final String areaShpFileForTrimming = "original_data/shp/olten/olten.shp";
+    // private static final String areaShpFileForTrimming = null;
+    private static final String areaShpFileForTrimming = "original_data/shp/olten/olten.shp";
     
     private static final String removeLinesOutsideThisArea = "original_data/shp/switzerland/switzerland.shp";
     
