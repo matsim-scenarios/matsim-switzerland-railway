@@ -56,10 +56,22 @@ public final class RunSwitzerlandRailway {
 		});
 		
 		// set some network attributes which are used by the railsim engine
+		int resourceCnt = 0;
 		for (Link link : scenario.getNetwork().getLinks().values()) {
 			RailsimUtils.setTrainCapacity(link, 1);
+			
+			RailsimUtils.setResourceId(link, "resource_" + resourceCnt);
+
+			// find inverse links
+			for (Link toNodeOutLink : link.getToNode().getOutLinks().values()) {
+				if (toNodeOutLink.getToNode() == link.getFromNode()) {
+					// inverse link
+					RailsimUtils.setResourceId(toNodeOutLink, "resource_" + resourceCnt);
+				}
+			}
+			resourceCnt++;
 		}
-				
+			
 		Controler controler = new Controler(scenario);
 
 		controler.addOverridingModule(new RailsimModule());
