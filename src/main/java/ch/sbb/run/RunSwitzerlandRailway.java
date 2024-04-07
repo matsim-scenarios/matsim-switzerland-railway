@@ -103,36 +103,42 @@ public final class RunSwitzerlandRailway {
 		vehTypeIC.getCapacity().setStandingRoom(1000);
 		vehTypeIC.setMaximumVelocity(100.);
 		vehTypeIC.setLength(1000.);
+		vehTypeIC.setNetworkMode("rail");
 		scenario.getTransitVehicles().addVehicleType(vehTypeIC);
 		
 		VehicleType vehTypeEC = scenario.getTransitVehicles().getFactory().createVehicleType(Id.create("EC", VehicleType.class));
 		vehTypeEC.getCapacity().setStandingRoom(1000);
 		vehTypeEC.setMaximumVelocity(100.);
-		vehTypeIC.setLength(1000.);
+		vehTypeEC.setLength(1000.);
+		vehTypeEC.setNetworkMode("rail");
 		scenario.getTransitVehicles().addVehicleType(vehTypeEC);
 		
 		VehicleType vehTypeIR = scenario.getTransitVehicles().getFactory().createVehicleType(Id.create("IR", VehicleType.class));
 		vehTypeIR.getCapacity().setStandingRoom(1000);
 		vehTypeIR.setMaximumVelocity(100.);
-		vehTypeIC.setLength(1000.);
+		vehTypeIR.setLength(1000.);
+		vehTypeIR.setNetworkMode("rail");
 		scenario.getTransitVehicles().addVehicleType(vehTypeIR);
 		
 		VehicleType vehTypeRE = scenario.getTransitVehicles().getFactory().createVehicleType(Id.create("RE", VehicleType.class));
 		vehTypeRE.getCapacity().setStandingRoom(1000);
 		vehTypeRE.setMaximumVelocity(27.777);
 		vehTypeRE.setLength(300.);
+		vehTypeRE.setNetworkMode("rail");
 		scenario.getTransitVehicles().addVehicleType(vehTypeRE);
 		
 		VehicleType vehTypeS = scenario.getTransitVehicles().getFactory().createVehicleType(Id.create("S", VehicleType.class));
 		vehTypeS.getCapacity().setStandingRoom(1000);
 		vehTypeS.setMaximumVelocity(27.777);
 		vehTypeS.setLength(300.);
+		vehTypeS.setNetworkMode("rail");
 		scenario.getTransitVehicles().addVehicleType(vehTypeS);
 		
 		VehicleType vehTypeOther = scenario.getTransitVehicles().getFactory().createVehicleType(Id.create("other", VehicleType.class));
 		vehTypeOther.getCapacity().setStandingRoom(1000);
 		vehTypeOther.setMaximumVelocity(27.777);
 		vehTypeOther.setLength(300.);
+		vehTypeOther.setNetworkMode("rail");
 		scenario.getTransitVehicles().addVehicleType(vehTypeOther);
 		
 		for (TransitLine line : scenario.getTransitSchedule().getTransitLines().values()) {
