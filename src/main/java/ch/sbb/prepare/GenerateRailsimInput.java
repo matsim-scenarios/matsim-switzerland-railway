@@ -171,6 +171,7 @@ public final class GenerateRailsimInput {
 		
 		ScheduleCleaner.cleanVehicles(schedule, vehicles);
 		ScheduleCleaner.removeNotUsedStopFacilities(schedule);
+		ScheduleCleaner.removeNotUsedMinimalTransferTimes(schedule);
 		ScheduleTools.writeTransitSchedule(schedule, SCHEDULE_GTFS_FILTERED_MAPPED_TRIMMED);
 		ScheduleTools.writeVehicles(vehicles, VEHICLES_GTFS_TRIMMED);
 	}
