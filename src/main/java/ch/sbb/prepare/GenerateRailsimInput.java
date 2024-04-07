@@ -34,7 +34,6 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.ConfigWriter;
 import org.matsim.core.utils.collections.CollectionUtils;
-import org.matsim.pt.transitSchedule.api.Departure;
 import org.matsim.pt.transitSchedule.api.TransitLine;
 import org.matsim.pt.transitSchedule.api.TransitRoute;
 import org.matsim.pt.transitSchedule.api.TransitRouteStop;
@@ -50,7 +49,6 @@ import org.matsim.pt2matsim.tools.NetworkTools;
 import org.matsim.pt2matsim.tools.ScheduleTools;
 import org.matsim.pt2matsim.tools.debug.ScheduleCleaner;
 import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
-import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.Vehicles;
 
 public final class GenerateRailsimInput {
@@ -67,7 +65,7 @@ public final class GenerateRailsimInput {
     private static final String removeLinesOutsideThisArea = "original_data/shp/switzerland/switzerland.shp";
     
     // optional: filter by line name prefix
-    private static final Set<String> transitLineNamePrefixesToKeep = CollectionUtils.stringToSet("IC");
+    private static final Set<String> transitLineNamePrefixesToKeep = CollectionUtils.stringToSet("IC,IR,EC,RE");
     // private static final Set<String> transitLineNamePrefixesToKeep = null;
 
 	private static final String EPSG2056 = "EPSG:2056";
@@ -104,16 +102,16 @@ public final class GenerateRailsimInput {
 		new File(MATSIM_INPUT_TMP).mkdirs();
 
 		// 1. Convert a gtfs schedule to an unmapped transit schedule
-//		gtfsToSchedule();
-//		filterSchedule();
-//
-//		// 2. Convert an osm map to a MATSim network
-//		createOsmConfigFile( PT2MATSIM_OSM_CONVERTER_CONFIG );
-//		Osm2MultimodalNetwork.main(new String[]{ PT2MATSIM_OSM_CONVERTER_CONFIG });
-//
-//		// 3. Map the schedule onto the network
-//		createMapperConfigFile(PT2MATSIM_MAPPER_CONFIG);
-//		PublicTransitMapper.main(new String[]{PT2MATSIM_MAPPER_CONFIG});
+		gtfsToSchedule();
+		filterSchedule();
+
+		// 2. Convert an osm map to a MATSim network
+		createOsmConfigFile( PT2MATSIM_OSM_CONVERTER_CONFIG );
+		Osm2MultimodalNetwork.main(new String[]{ PT2MATSIM_OSM_CONVERTER_CONFIG });
+
+		// 3. Map the schedule onto the network
+		createMapperConfigFile(PT2MATSIM_MAPPER_CONFIG);
+		PublicTransitMapper.main(new String[]{PT2MATSIM_MAPPER_CONFIG});
 		
 		trimSchedule();
 		writeFinalFiles();
@@ -123,16 +121,6 @@ public final class GenerateRailsimInput {
 		TransitSchedule schedule = ScheduleTools.readTransitSchedule(SCHEDULE_GTFS_FILTERED_MAPPED_TRIMMED);
 		Network network = NetworkTools.readNetwork(NETWORK_OSM_MAPPED);
 		Vehicles vehicles = ScheduleTools.readVehicles(VEHICLES_GTFS_TRIMMED);
-				
-		for (TransitLine line : schedule.getTransitLines().values()) {
-			for (TransitRoute route : line.getRoutes().values()) {
-				for (Departure dep : route.getDepartures().values()) {
-					Id<Vehicle> vehicleId = dep.getVehicleId();
-					Vehicle vehicle = vehicles.getVehicles().get(vehicleId);
-					vehicle.getAttributes().putAttribute("line_name", line.getName());
-				}
-			}
-		}
 				
 		ScheduleTools.writeTransitSchedule(schedule, SCHEDULE_FINAL);	
 		NetworkTools.writeNetwork(network, NETWORK_FINAL);
