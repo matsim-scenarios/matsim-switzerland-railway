@@ -57,8 +57,8 @@ public final class GenerateRailsimInput {
 	private static final String INPUT_GTFS_FILE = "original_data/gtfs/gtfs_fp2024_2024-03-20_04-15.zip";
 	
 	// optional: trim the schedule
-    // private static final String areaShpFileForTrimming = null;
-    private static final String areaShpFileForTrimming = "original_data/shp/olten/olten.shp";
+    private static final String areaShpFileForTrimming = null;
+    // private static final String areaShpFileForTrimming = "original_data/shp/olten/olten.shp";
     // private static final String areaShpFileForTrimming = "original_data/shp/switzerland/switzerland.shp";
     
     // optional: filter by line name prefix
@@ -263,7 +263,7 @@ public final class GenerateRailsimInput {
 		ptmConfig.setOutputNetworkFile(NETWORK_OSM_MAPPED);
 		ptmConfig.setOutputScheduleFile(SCHEDULE_GTFS_FILTERED_MAPPED);
 		ptmConfig.setInputScheduleFile(SCHEDULE_GTFS_FILTERED);
-//		ptmConfig.setModesToKeepOnCleanUp(CollectionUtils.stringToSet("rail"));
+		ptmConfig.setModesToKeepOnCleanUp(CollectionUtils.stringToSet("rail"));
 		ptmConfig.setScheduleFreespeedModes(CollectionUtils.stringToSet("rail"));
 		new ConfigWriter(config).write(configFile);
 		
