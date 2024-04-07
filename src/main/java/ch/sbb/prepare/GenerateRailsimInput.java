@@ -35,6 +35,7 @@ import org.matsim.core.utils.collections.CollectionUtils;
 import org.matsim.pt.transitSchedule.api.Departure;
 import org.matsim.pt.transitSchedule.api.TransitLine;
 import org.matsim.pt.transitSchedule.api.TransitRoute;
+import org.matsim.pt.transitSchedule.api.TransitRouteStop;
 import org.matsim.pt.transitSchedule.api.TransitSchedule;
 import org.matsim.pt2matsim.config.OsmConverterConfigGroup;
 import org.matsim.pt2matsim.config.PublicTransitMappingConfigGroup;
@@ -59,7 +60,8 @@ public final class GenerateRailsimInput {
 	// optional: trim the schedule
     private static final String areaShpFileForTrimming = null;
     // private static final String areaShpFileForTrimming = "original_data/shp/olten/olten.shp";
-    // private static final String areaShpFileForTrimming = "original_data/shp/switzerland/switzerland.shp";
+    
+    private static final String removeLinesOutsideThisArea = "original_data/shp/switzerland/switzerland.shp";
     
     // optional: filter by line name prefix
     private static final Set<String> transitLineNamePrefixesToKeep = CollectionUtils.stringToSet("IC");
@@ -167,7 +169,16 @@ public final class GenerateRailsimInput {
 		return false;	
 	}
 	
-	public static void filterSchedule() {
+	private static boolean routeHasStopInArea(TransitRoute route, List<PreparedGeometry> geometries) {
+		 for (TransitRouteStop stop : route.getStops()) {
+	        	if (ShpGeometryUtils.isCoordInPreparedGeometries(stop.getStopFacility().getCoord(), geometries)) {
+	                return true;
+	            }
+	        }   
+			return false;	
+	}
+	
+	public static void filterSchedule() throws MalformedURLException {
 		TransitSchedule schedule = ScheduleTools.readTransitSchedule(SCHEDULE_GTFS);
 
 		// remove non-rail transit lines, e.g. buses, light-rail, ...
@@ -175,6 +186,22 @@ public final class GenerateRailsimInput {
 			for(TransitRoute transitRoute : new HashSet<>(transitLine.getRoutes().values())) {
 				if(!transitRoute.getTransportMode().equals("rail")) {
 					transitLine.removeRoute(transitRoute);
+				}
+			}
+		}
+		
+		// remove lines outside the provided area, e.g. Switzerland
+		if (removeLinesOutsideThisArea != null) {
+			List<PreparedGeometry> geometries = ShpGeometryUtils.loadPreparedGeometries(new File(removeLinesOutsideThisArea).toURI().toURL());
+
+			for (TransitLine transitLine : new HashSet<>(schedule.getTransitLines().values())) {
+				for(TransitRoute transitRoute : new HashSet<>(transitLine.getRoutes().values())) {
+					if (routeHasStopInArea(transitRoute, geometries)) {
+						// keep
+					} else {
+						// remove
+						transitLine.removeRoute(transitRoute);
+					}
 				}
 			}
 		}
@@ -206,7 +233,6 @@ public final class GenerateRailsimInput {
 		ScheduleCleaner.removeNotUsedStopFacilities(schedule);
 		ScheduleTools.writeTransitSchedule(schedule, SCHEDULE_GTFS_FILTERED);
 	}
-
 
 	/**
 	 * 	1. A GTFS or HAFAS Schedule or a OSM map with information on public transport
