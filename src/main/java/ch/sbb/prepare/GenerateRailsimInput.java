@@ -24,6 +24,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
@@ -52,6 +54,7 @@ import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.Vehicles;
 
 public final class GenerateRailsimInput {
+    private static final Logger log = LogManager.getLogger(GenerateRailsimInput.class);
 
 	// input osm and gtfs file
 	private static final String INPUT_OSM_FILE = "original_data/osm/switzerland_railways.osm";
@@ -93,23 +96,24 @@ public final class GenerateRailsimInput {
 	private static final String NETWORK_OSM_MAPPED = MATSIM_INPUT_TMP + "network_osm_mapped.xml.gz";
 	
 	private static final String VEHICLES_GTFS = MATSIM_INPUT_TMP + "vehicles_gtfs.xml.gz";
-	
+	private static final String VEHICLES_GTFS_TRIMMED = MATSIM_INPUT_TMP + "vehicles_gtfs_trimmed.xml.gz";
+
 	public static void main(String[] args) throws MalformedURLException {
 
 		new File(MATSIM_INPUT).mkdirs();
 		new File(MATSIM_INPUT_TMP).mkdirs();
 
 		// 1. Convert a gtfs schedule to an unmapped transit schedule
-		gtfsToSchedule();
-		filterSchedule();
-
-		// 2. Convert an osm map to a MATSim network
-		createOsmConfigFile( PT2MATSIM_OSM_CONVERTER_CONFIG );
-		Osm2MultimodalNetwork.main(new String[]{ PT2MATSIM_OSM_CONVERTER_CONFIG });
-
-		// 3. Map the schedule onto the network
-		createMapperConfigFile(PT2MATSIM_MAPPER_CONFIG);
-		PublicTransitMapper.main(new String[]{PT2MATSIM_MAPPER_CONFIG});
+//		gtfsToSchedule();
+//		filterSchedule();
+//
+//		// 2. Convert an osm map to a MATSim network
+//		createOsmConfigFile( PT2MATSIM_OSM_CONVERTER_CONFIG );
+//		Osm2MultimodalNetwork.main(new String[]{ PT2MATSIM_OSM_CONVERTER_CONFIG });
+//
+//		// 3. Map the schedule onto the network
+//		createMapperConfigFile(PT2MATSIM_MAPPER_CONFIG);
+//		PublicTransitMapper.main(new String[]{PT2MATSIM_MAPPER_CONFIG});
 		
 		trimSchedule();
 		writeFinalFiles();
@@ -118,7 +122,7 @@ public final class GenerateRailsimInput {
 	private static void writeFinalFiles() {
 		TransitSchedule schedule = ScheduleTools.readTransitSchedule(SCHEDULE_GTFS_FILTERED_MAPPED_TRIMMED);
 		Network network = NetworkTools.readNetwork(NETWORK_OSM_MAPPED);
-		Vehicles vehicles = ScheduleTools.readVehicles(VEHICLES_GTFS);
+		Vehicles vehicles = ScheduleTools.readVehicles(VEHICLES_GTFS_TRIMMED);
 				
 		for (TransitLine line : schedule.getTransitLines().values()) {
 			for (TransitRoute route : line.getRoutes().values()) {
@@ -138,6 +142,7 @@ public final class GenerateRailsimInput {
 	private static void trimSchedule() throws MalformedURLException {
 		TransitSchedule schedule = ScheduleTools.readTransitSchedule(SCHEDULE_GTFS_FILTERED_MAPPED);
 		Network network = NetworkTools.readNetwork(NETWORK_OSM_MAPPED);
+		Vehicles vehicles = ScheduleTools.readVehicles(VEHICLES_GTFS);
 		
 		if (areaShpFileForTrimming != null) {
 			List<PreparedGeometry> geometries = ShpGeometryUtils.loadPreparedGeometries(new File(areaShpFileForTrimming).toURI().toURL());
@@ -149,14 +154,25 @@ public final class GenerateRailsimInput {
 					} else {
 						// remove
 						transitLine.removeRoute(transitRoute);
+						log.info("Route " + transitRoute + " removed.");
 					}
 				}
 
 			}
 		}
 		
+		// remove transit lines without routes
+		for (TransitLine transitLine : new HashSet<>(schedule.getTransitLines().values())) {
+			if (transitLine.getRoutes().size() == 0) {
+				schedule.removeTransitLine(transitLine);
+				log.info("Remove line " + transitLine.getId());
+			}
+		}
+		
+		ScheduleCleaner.cleanVehicles(schedule, vehicles);
 		ScheduleCleaner.removeNotUsedStopFacilities(schedule);
-		ScheduleTools.writeTransitSchedule(schedule, SCHEDULE_GTFS_FILTERED_MAPPED_TRIMMED);		
+		ScheduleTools.writeTransitSchedule(schedule, SCHEDULE_GTFS_FILTERED_MAPPED_TRIMMED);
+		ScheduleTools.writeVehicles(vehicles, VEHICLES_GTFS_TRIMMED);
 	}
 	
 	private static boolean routeHasLinkInArea(TransitRoute route, Network network, List<PreparedGeometry> geometries) {
