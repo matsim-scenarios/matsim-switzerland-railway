@@ -11,7 +11,8 @@
 
     <properties>
         <!-- <matsim.version>16.0-2024w13</matsim.version> -->
-        <matsim.version>15.0</matsim.version>
+        <!-- <matsim.version>15.0</matsim.version> -->
+        <matsim.version>2024.0</matsim.version>
         <log4j.version>2.20.0</log4j.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -74,7 +75,7 @@
 		<dependency>
         	<groupId>org.matsim</groupId>
         	<artifactId>pt2matsim</artifactId>
-        	<version>23.4</version>
+        	<version>24.4</version>
     	</dependency>
 
     </dependencies>
