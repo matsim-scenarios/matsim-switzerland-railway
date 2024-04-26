@@ -2,6 +2,8 @@
 
 original_data/gtfs/*.zip
 original_data/gtfs/
+original_data/gtfs/*
+
 original_data/osm/switzerland_railways.osm
 
 # Common files to ignore when working with MATSim
