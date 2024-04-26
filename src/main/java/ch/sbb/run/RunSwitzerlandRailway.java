@@ -102,21 +102,21 @@ public final class RunSwitzerlandRailway {
 		VehicleType vehTypeIC = scenario.getTransitVehicles().getFactory().createVehicleType(Id.create("IC", VehicleType.class));
 		vehTypeIC.getCapacity().setStandingRoom(1000);
 		vehTypeIC.setMaximumVelocity(100.);
-		vehTypeIC.setLength(1000.);
+		vehTypeIC.setLength(250.);
 		vehTypeIC.setNetworkMode("rail");
 		scenario.getTransitVehicles().addVehicleType(vehTypeIC);
 		
 		VehicleType vehTypeEC = scenario.getTransitVehicles().getFactory().createVehicleType(Id.create("EC", VehicleType.class));
 		vehTypeEC.getCapacity().setStandingRoom(1000);
 		vehTypeEC.setMaximumVelocity(100.);
-		vehTypeEC.setLength(1000.);
+		vehTypeEC.setLength(250.);
 		vehTypeEC.setNetworkMode("rail");
 		scenario.getTransitVehicles().addVehicleType(vehTypeEC);
 		
 		VehicleType vehTypeIR = scenario.getTransitVehicles().getFactory().createVehicleType(Id.create("IR", VehicleType.class));
 		vehTypeIR.getCapacity().setStandingRoom(1000);
 		vehTypeIR.setMaximumVelocity(100.);
-		vehTypeIR.setLength(1000.);
+		vehTypeIR.setLength(250.);
 		vehTypeIR.setNetworkMode("rail");
 		scenario.getTransitVehicles().addVehicleType(vehTypeIR);
 		
@@ -130,14 +130,14 @@ public final class RunSwitzerlandRailway {
 		VehicleType vehTypeS = scenario.getTransitVehicles().getFactory().createVehicleType(Id.create("S", VehicleType.class));
 		vehTypeS.getCapacity().setStandingRoom(1000);
 		vehTypeS.setMaximumVelocity(27.777);
-		vehTypeS.setLength(300.);
+		vehTypeS.setLength(150.);
 		vehTypeS.setNetworkMode("rail");
 		scenario.getTransitVehicles().addVehicleType(vehTypeS);
 		
 		VehicleType vehTypeOther = scenario.getTransitVehicles().getFactory().createVehicleType(Id.create("other", VehicleType.class));
 		vehTypeOther.getCapacity().setStandingRoom(1000);
 		vehTypeOther.setMaximumVelocity(27.777);
-		vehTypeOther.setLength(300.);
+		vehTypeOther.setLength(150.);
 		vehTypeOther.setNetworkMode("rail");
 		scenario.getTransitVehicles().addVehicleType(vehTypeOther);
 		
