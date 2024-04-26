@@ -71,7 +71,13 @@
             <artifactId>assertj-core</artifactId>
             <version>3.24.2</version>
         </dependency>
-        
+		
+		<dependency>
+        	<groupId>org.matsim</groupId>
+        	<artifactId>pt2matsim</artifactId>
+        	<version>24.4</version>
+    	</dependency>
+  
         <dependency>
     		<groupId>ch.sbb.matsim.contrib</groupId>
     		<artifactId>railsim</artifactId>
