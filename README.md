@@ -29,21 +29,31 @@ The **MATSim input files, output files, analysis data and visualizations** are l
 
 
 ----
-### Prepare the MATSim input files
-1. Switch to the branch `prepare`. (Currently, the preparation requires an older MATSim version than the railsim contribution. So, we can't have everything in one branch. So, for now, we have to deal with two different branches.)
-1. Download the OSM and GTFS file. For some useful links, have a look into the info files in the `original_data` directory.
-1. Process the OSM input file (optional), e.g. use osmosis. For some useful links and some help, have a look into the info files in the `original_data` directory.
-1. Put the GTFS and (processed) OSM file into the `original_data` directory.
-1. Run the JAVA class located in `src/main/java/ch/sbb/prepare`. The preparation makes use of the pt2matsim repository.
+
+### Prepare the input files
+
+##### Step 1: Get the required original data
+
+1. Download the GTFS file, e.g., from https://opentransportdata.swiss/en/group/timetables-gtfs.
+1. Download the OSM file, e.g., from https://download.geofabrik.de/europe/switzerland.html.
+11. (Optional) Process the OSM data, e.g., with osmosis. Download osmosis from https://wiki.openstreetmap.org/wiki/Osmosis. Filter the OSM data, e.g. with the following command: `osmosis --rb file=switzerland-latest.osm.pbf --tf accept-ways railway=* --used-node --wx switzerland_railways.osm`
+1. Put the GTFS file (`*.zip`) and (processed) OSM file (`*.osm`) file into the `original_data` directory.
+
+##### Step 2: Read the original data and generate the MATSim input files
+
+1. Open the JAVA class `GenerateRailsimInput` located in `src/main/java/ch/sbb/prepare`.
+1. Adjust the file names and make sure the files are locally available in the `original_data` directory.
+1. Adjust some further inputs, e.g. rail product names, area of interest, ...
+1. Run the `GenerateRailsimInput` class. The preparation makes use of the pt2matsim repository, see here: <https://github.com/matsim-org/pt2matsim>
 
 ----
+
 ### Run the MATSim Switzerland Railway scenario
 
-##### ... using an IDE, e.g. Eclipse, IntelliJ - Alternative 1: use cloned/downloaded matsim-[name] repository
+##### ... using an IDE, e.g. Eclipse, IntelliJ
 (Requires either cloning or downloading the repository.)
 
 1. Set up the project in your IDE.
-1. Switch to the branch `main`
 1. Make sure the project is configured as maven project.
 1. Run the JAVA class `src/main/java/ch/sbb/run/RunSwitzerlandRailway.java`.
 1. "Open" the output directory.  You can drag files into VIA as was already done above.
@@ -56,6 +66,5 @@ The **MATSim input files, output files, analysis data and visualizations** are l
 2. Build the scenario using `mvnw package` 
 3. There should be a  `<...>.jar` file directly in the main directory.
 4. Run this file from the command line using `java -jar <...>.jar --help` to see all possible options.
-    1. For example, one can disable lanes or run the 25pct scenario using the available options
 5. Start this scenario using the default config by running `java -jar <...>.jar`
 6. "Open" the output directory.  You can drag files into VIA as was already done above.
