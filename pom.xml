@@ -100,6 +100,30 @@
                     <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
+            <plugin>
+            	<groupId>org.apache.maven.plugins</groupId>
+            	<artifactId>maven-enforcer-plugin</artifactId>
+            	<version>3.5.0</version>
+	            <executions>
+	                <execution>
+	                    <id>enforce-default</id>
+	                    <goals>
+	                        <goal>enforce</goal>
+	                    </goals>
+	                    <configuration>
+	                        <rules>
+	                            <requireMavenVersion>
+	                                <version>[3.6.0,)</version>
+	                            </requireMavenVersion>
+	                            <requireJavaVersion>
+	                                <version>[21,)</version>
+	                            </requireJavaVersion>
+	                        </rules>
+	                        <failFast>true</failFast>
+	                    </configuration>
+	                </execution>
+	            </executions>
+        	</plugin>
 			<plugin>
 				<!-- This plugin makes source files and javadocs available inside eclipse.  In IntelliJ, this works without plugin.-->
 				<groupId>org.apache.maven.plugins</groupId>
