@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [17]
+        java: [21]
 
     steps:
       - uses: actions/checkout@v3
