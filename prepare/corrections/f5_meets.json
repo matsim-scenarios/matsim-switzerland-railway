@@ -1,0 +1,12 @@
+{
+ "name": "F5 two simultaneous same-direction pairs on parallel tracks",
+ "why": "Two pairs are booked at the SAME second in the same direction on one modelled track: the Bern platform throat 192191..91579 (IR/IR17 vs IC6, 0-1 s headway, 243 m) and Aarburg 86008..86152 (IC5 vs IC8, 5-8 s, 1 129 m). Neither headway is possible on one track; the trains must use parallel throat/line tracks. The run is copied for one line of each pair (9/18 m offset).",
+ "actions": [
+  {"type": "duplicate_corridor", "name": "Bern platform throat track (IR, IR17)",
+   "chain": ["192191","225675","532774","532776","509163","91573","91575","91577","91579"],
+   "to": "91579", "lines": ["IR","IR17"], "offset": 18.0, "tag": "bt"},
+  {"type": "duplicate_corridor", "name": "Aarburg second track (IC8)",
+   "chain": ["86008","86010","86012","86014","86016","86018","86020","86022","86140","86142","86144","86146","86148","86150","86152"],
+   "to": "86152", "lines": ["IC8"], "offset": 9.0, "tag": "ab"}
+ ]
+}
