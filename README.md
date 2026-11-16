@@ -2,7 +2,7 @@
 
 ![Build Status](https://github.com/matsim-scenarios/matsim-switzerland-railway/workflows/build/badge.svg?branch=main)
 ![license](https://img.shields.io/github/license/matsim-scenarios/matsim-switzerland-railway.svg)
-![JDK](https://img.shields.io/badge/JDK-21+-green.svg)
+![JDK](https://img.shields.io/badge/JDK-25+-green.svg)
 
 
 ![Switzerland railway network and agents](docs/img/visualization_ch_network.png "Switzerland railway network and agents")
