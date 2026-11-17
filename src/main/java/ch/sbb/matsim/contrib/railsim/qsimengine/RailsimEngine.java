@@ -1405,8 +1405,8 @@ final class RailsimEngine implements Steppable {
 					allowed = link.getAllowedFreespeed(state.driver);
 			}
 
-			// Only need to consider if speed is lower than the allowed speed
-			if (!FuzzyUtils.equals(dist, 0) && allowed <= minAllowed) {
+			// A future limit above the advised speed cannot require braking.
+			if (!FuzzyUtils.equals(dist, 0) && allowed <= minAllowed && allowed <= advisedSpeed) {
 				RailsimCalc.SpeedTarget target = RailsimCalc.calcTargetSpeed(dist, state.train.acceleration(), state.train.deceleration(),
 					state.speed, advisedSpeed, Math.min(state.allowedMaxSpeed, allowed));
 
