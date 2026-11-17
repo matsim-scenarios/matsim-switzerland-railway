@@ -126,7 +126,10 @@ public final class GenerateRailsimInput {
 			switch (args[i]) {
 				case "--gtfs" -> inputGtfsFile = args[++i];
 				case "--osm" -> inputOsmFile = args[++i];
-				case "--out" -> matsimInputTmp = args[++i].endsWith("/") ? args[++i] : args[++i] + "/";
+				case "--out" -> {
+					String directory = args[++i];
+					matsimInputTmp = directory.endsWith("/") ? directory : directory + "/";
+				}
 				case "--area" -> removeLinesOutsideThisArea = args[++i];
 				default -> {
 					if (!caseSeen && (args[i].equals("olten") || args[i].equals("switzerland") || args[i].equals("ch"))) {
