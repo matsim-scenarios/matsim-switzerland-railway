@@ -139,15 +139,14 @@ other simulations.
 
 ### Results
 
-The following figures describe the round 3 reference runs, before the reversal and speed-lookahead corrections (`scripts/prepare_case.sh` + `scripts/run_case.sh`, both cases, one service
-day).  **Metric:** `deviation = actual arrival − published arrival` at every stop; the goal is 0 s,
+The following figures come from full service-day runs with the corrected reversal and speed calculations. Olten ran with Java assertions enabled. Switzerland used the default runtime settings.  **Metric:** `deviation = actual arrival − published arrival` at every stop; the goal is 0 s,
 so early and late count the same.  `abs_dev_seconds = Σ|deviation|`, `departures_early` counts trains
 that leave a stop before the published departure time (a run with any is invalid).
 
 | case | trains finished | stop arrivals judged | `abs_dev_seconds` | within 1 s | within 30 s | late > 180 s | worst early / late | departures early | audit |
 |---|---:|---:|---:|---:|---:|---:|---|---:|---|
 | **Olten** | **612 / 612** | 4 847 / 4 847 | **43 027** | **88.49 %** | 97.28 % | 99 | 0 s / +747 s | **0** | 0 body overlaps (83 windows), 0 unreserved body held by another train, 0 teleports |
-| **Switzerland** | **2 541 / 2 541** | 18 702 / 18 702 | **73 530** | **87.02 %** | 98.53 % | 98 | 0 s / +842 s | **0** | 0 body overlaps (286 windows), 0 unreserved body held by another train, 0 teleports |
+| **Switzerland** | **2 541 / 2 541** | 18 702 / 18 702 | **73 513** | **87.02 %** | 98.53 % | 98 | 0 s / +842 s | **0** | 0 body overlaps (286 windows), 0 unreserved body held by another train, 0 teleports |
 
 No train is missing a stop (0 missing arrivals), no deadlock (`deadlocks.py`: 0 stalled, 0 unfinished),
 no train arrives early at all (the smallest deviation of the whole Switzerland case is 0 s) and both
@@ -157,7 +156,7 @@ the repository pipeline only; `swarm/r3/P4/REPORT.md` compares them with the rou
 row by row (Olten `swarm/r3/exp/EN1-olten` 48 146, Switzerland `swarm/r3/exp/BN4-ch`/`EN1-ch` 99 214,
 `P3-ch-ref` 92 828 — the pipeline run without the two round-3 rule fixes below is 48 146 / 92 699).
 
-The last two steps that took these numbers from 47 817 / 92 828 to 43 027 / 73 530 are agent EN1's
+Before the reversal and speed corrections, the two steps that took the reference runs from 47 817 / 92 828 to 43 027 / 73 530 are agent EN1's
 engine fix (the head never moves without driving: the recorded tail is 100.00 % exact and no arrival
 is early any more) and agent P4's extension of the time-bounded retrace claim
 (`sectionLock.retracePassAhead`): 17 RE7 and 8 IC8 no longer wait 758–874 s for a Bern departure lead

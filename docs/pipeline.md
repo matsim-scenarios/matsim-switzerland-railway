@@ -456,17 +456,21 @@ sources in `src/main/java` carry agent EN1's engine fix and agent P4's extension
 (`run.properties`: `engine.reachTime=on`, `engine.headGuard=on`, `engine.reversalEnter=off`,
 `sectionLock.retracePassAhead=on`):
 
+The table uses the service-day reruns after correcting reversal geometry and speed lookahead.
+The national total fell from 73,530 to 73,513 seconds of absolute arrival deviation. Olten
+reproduced the original total with Java assertions enabled.
+
 | case | trains finished | stop arrivals judged | `abs_dev_seconds` | ≤ 1 s | ≤ 5 s | ≤ 30 s | late > 0 / 30 / 180 s | early > 1 s | worst early / late | `departures_early` |
 |---|---:|---:|---:|---:|---:|---:|---|---:|---|---:|
 | **Olten** | **612 / 612** | 4 847 / 4 847 | **43 027** | **88.49 %** | 95.15 % | 97.28 % | 1 076 / 132 / 99 | **0** | 0 s / +747 s | **0** |
-| **Switzerland** | **2 541 / 2 541** | 18 702 / 18 702 | **73 530** | **87.02 %** | 94.10 % | 98.53 % | 3 940 / 274 / 98 | **0** | 0 s / +842 s | **0** |
+| **Switzerland** | **2 541 / 2 541** | 18 702 / 18 702 | **73 513** | **87.02 %** | 94.10 % | 98.53 % | 3 923 / 274 / 98 | **0** | 0 s / +842 s | **0** |
 
 (4 847 = 5 459 stops − 612 first stops, 18 702 = 21 243 − 2 541: the first stop of a run has no
 arrival to judge.)  Both runs: 0 missing arrivals, `valid: true` in `score.json`, 0 deadlocks
 (`deadlocks.py`: 612/2541 completed, 0 stalled, 0 cycles), physical audit 0 body overlaps of 83
-(Olten) / 286 (Switzerland) candidate windows, 0 unreserved body held by another train, 0 teleports,
+(Olten) / 286 (Switzerland) candidate windows, 0 unreserved-body samples (885,456 Olten samples and 2,486,624 Switzerland samples), 0 teleports,
 recorded tail within 5 m of an independent reconstruction in **100.00 %** of the state events.  No
-arrival of either case is more than 1 s early.
+arrival of either case is more than 1 s early. The national overlap and reservation checks exclude 880 off-model links on 693 high-capacity boundary resources.
 
 Without the last two steps (they are pure dispatching/engine changes, the data is unchanged): the
 same pipeline with base12's sources measured 47 817 (Olten) and 92 828 (Switzerland, P3), with EN1's
@@ -480,7 +484,7 @@ Reference comparison (round-3 agents, `swarm/r3/P3/REPORT.md` §1-§3 and `swarm
 | this pipeline | Olten | 612/612 | 43 027 | 88.49 % | 99 | 0 |
 | `swarm/r3/exp/BN4-olten` (base12 + BN4, base12 sources) | Olten | 612/612 | 47 817 | 89.87 % | 108 | 0 |
 | `swarm/r3/exp/EN1-olten` (same + EN1's engine fix) | Olten | 612/612 | 48 146 | 88.53 % | 107 | 0 |
-| this pipeline | Switzerland | 2 541/2 541 | 73 530 | 87.02 % | 98 | 0 |
+| this pipeline | Switzerland | 2 541/2 541 | 73 513 | 87.02 % | 98 | 0 |
 | `swarm/r3/exp/P3-ch-ref` (base12 + CH2 + BN4) | Switzerland | 2 541/2 541 | 92 828 | 87.61 % | 123 | 0 |
 | `swarm/r3/exp/EN1-ch` (same + EN1's engine fix, no CH2 fix upstream) | Switzerland | 2 541/2 541 | 99 214 | 85.85 % | 122 | 0 |
 
