@@ -14,7 +14,7 @@
         <!-- <matsim.version>15.0</matsim.version> -->
         <!-- <matsim.version>2024.0</matsim.version> -->
         <!-- <matsim.version>2025.0-SNAPSHOT</matsim.version> -->
-        <matsim.version>2025.0-2024w22</matsim.version>
+        <matsim.version>2027.0-2026w45</matsim.version>
 
         <log4j.version>2.20.0</log4j.version>
         <maven.compiler.source>21</maven.compiler.source>
@@ -124,7 +124,7 @@
 <!--				https://stackoverflow.com/questions/27429097/geotools-cannot-find-hsql-epsg-db-throws-error-nosuchauthoritycodeexception/27431381#27431381)-->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.2.2</version>
+				<version>3.6.2</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
