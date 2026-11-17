@@ -34,12 +34,11 @@ override the location with `RAIL_TABLES=/path/to/tables`.
 Driver scripts (both write only into `matsim_input/`, nothing into `swarm/`):
 
 * `scripts/prepare_case.sh <olten|switzerland>` — steps 1–14: static tables + case schedule →
-  rolling stock → `mvn -o clean package` → track assignment (`ch.sbb.prepare.router.TrackRouter`) →
+  rolling stock → `mvn clean package` → track assignment (`ch.sbb.prepare.router.TrackRouter`) →
   reversal post-processing → station dwell times → timetable checks → passing loops → route patches
   → stop positions → off-model speeds → off-model lengths (CH only) → `check_mapping.py`.
 * `scripts/run_case.sh <olten|switzerland>` — step 15–16: MATSim run through the jar (slot-limited,
   same semaphore as the project bench) → `evaluate.py` → `punct.py` → `audit_safety.py` →
   `deadlocks.py`.
 
-Requirements: JDK 25 and Maven (offline-capable, `~/.m2` holds MATSim/railsim `2027.0-2026w45`,
-pt2matsim `24.4`), `uv` for the Python builders.
+Requirements: JDK 25 and Maven on PATH (or set `MVN` to the Maven executable), `uv` for the Python builders.

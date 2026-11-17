@@ -56,22 +56,33 @@ The **MATSim input files, output files, analysis data and visualizations** are l
 1. Put the GTFS file (`*.zip`), the (processed) OSM extract (`*.osm`) and the full extract (`*.osm.pbf`,
    for the `route=train` relations) into `original_data/`.
 
-##### Step 2: One command per case
+##### Step 2: Generate the shared network and timetable
+
+Build with Maven and JDK 25. Run the converter from the repository root once for both cases.
+
+```bash
+mvn clean package
+java -Xmx8g -cp matsim-switzerland-railway-1.0.0-SNAPSHOT.jar ch.sbb.prepare.GenerateRailsimInput switzerland
+```
+
+The converter writes `network_osm.xml.gz` and `schedule_gtfs_filtered.xml.gz` in
+`matsim_input/tmp/`. If both files already exist for your source data, continue below.
+
+##### Step 3: Prepare a routed case
 
 ```bash
 scripts/prepare_case.sh olten          # or: scripts/prepare_case.sh switzerland
 ```
 
-This runs, from the original data to a routed case (≈ 16 min for Olten, ≈ 35 min for Switzerland):
+With the shared inputs in place, preparation runs the remaining steps (about 16 minutes for
+Olten and 35 minutes for Switzerland on the reference machine).
 
-1. `ch.sbb.prepare.GenerateRailsimInput` (pt2matsim): GTFS + OSM → unmapped schedule and raw
-   network in `matsim_input/tmp/` (already part of the input data; ~1 h if re-run);
 2. `prepare/build_tables.py`: the static tables the router and the run class consume (running
    direction, platform tracks, legal turns, blocks, OSM relations, rolling stock, off-model track) —
    every table is rebuilt from the original data, hand-made inputs are reviewed CSVs in
    `prepare/corrections/`;
 3. the rolling-stock table (`prepare/corrections/rolling_stock.csv` → `vehicles_fs1.csv`);
-4. `mvn -o clean package`;
+4. `mvn clean package`;
 5. `ch.sbb.prepare.router.TrackRouter`: the track assignment (passing loops, Gotthard corridor rule,
    off-model track for metre gauge/abroad);
 6. `prepare/fix_reversals.py`: honest reversal geometry (only `<route>` link lists change);
@@ -119,7 +130,7 @@ other simulations.
 ##### ... using a runnable jar file
 (Requires either cloning or downloading the repository and java)
 
-1. Build the scenario with `mvn -o clean package` (or `./mvnw package`); the shaded jar lands in the
+1. Build the scenario with `mvn clean package`; the shaded jar lands in the
    repository root.
 2. Run `java -jar <...>.jar olten` (or `switzerland`, or a path to a config file).
 3. "Open" the output directory.
@@ -128,7 +139,7 @@ other simulations.
 
 ### Results
 
-Round 3, final state (`scripts/prepare_case.sh` + `scripts/run_case.sh`, both cases, one service
+The following figures describe the round 3 reference runs, before the reversal and speed-lookahead corrections (`scripts/prepare_case.sh` + `scripts/run_case.sh`, both cases, one service
 day).  **Metric:** `deviation = actual arrival − published arrival` at every stop; the goal is 0 s,
 so early and late count the same.  `abs_dev_seconds = Σ|deviation|`, `departures_early` counts trains
 that leave a stop before the published departure time (a run with any is invalid).

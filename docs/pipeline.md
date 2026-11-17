@@ -41,7 +41,7 @@ original_data/shp/olten/olten.shp ──────────┘        A01 A
                                                      + matsim_input/olten/unmapped_schedule_gtfs.xml.gz
                                            │
                                            ├─(3) rolling stock   tables/RS1/vehicles_rs1.csv ─▶ matsim_input/<case>/vehicles_fs1.csv
-                                           ├─(4) build           mvn -o clean package        ─▶ matsim-switzerland-railway-<ver>.jar
+                                           ├─(4) build           mvn clean package        ─▶ matsim-switzerland-railway-<ver>.jar
                                            ├─(5) TrackRouter                                 ─▶ matsim_input/<case>/routed/
                                            ├─(6) prepare/fix_reversals.py                    ─▶ routed/ (reversal geometry)
                                            ├─(7) prepare/restore_dwell.py                    ─▶ unmapped_schedule.xml.gz (reference)
@@ -70,7 +70,7 @@ original_data/shp/olten/olten.shp ──────────┘        A01 A
 | `original_data/gtfs/gtfs_fp2024_2024-03-20_04-15.zip` | Swiss GTFS timetable, 2024 annual timetable | no (large, licensed separately) |
 | `original_data/osm/switzerland_railways.osm` | OSM railway ways (`osmosis --tf accept-ways railway=* --used-node`) | no |
 | `original_data/osm/switzerland-latest.osm.pbf` | full OSM extract (only for the `route=train` relations) | no |
-| `original_data/shp/{olten,switzerland}/*.shp` | case boundary polygons | no |
+| `original_data/shp/{olten,switzerland}/*.shp` | case boundary polygons | yes |
 | `matsim_input/tmp/*.xml.gz` | the two pt2matsim outputs of step 1 | no (`*.gz`) |
 | `matsim_input/<case>/{config.xml,run.properties}` | MATSim config + run-class switches (`run.properties` = the reference runs' file) | **yes** |
 | `prepare/corrections/*.{csv,json}` | the reviewed, hand-made corrections and the track-assignment specs | **yes** |
@@ -88,18 +88,14 @@ original_data/shp/olten/olten.shp ──────────┘        A01 A
    → `matsim_input/tmp/network_osm.xml.gz` (665 238 links).
 
 ```bash
-java -cp matsim-switzerland-railway-<ver>.jar ch.sbb.prepare.GenerateRailsimInput olten          # or: switzerland
-# ~1 h, 8-10 GB (UNVERIFIED: see below)
+mvn clean package
+java -Xmx8g -cp matsim-switzerland-railway-1.0.0-SNAPSHOT.jar ch.sbb.prepare.GenerateRailsimInput switzerland
 ```
 
-**Status: not re-run.**  A full pt2matsim run takes about an hour and 8-10 GB and overwrites the
-network that every result was produced on; the two files are part of the input data and are
-byte-for-byte the ones the track router and the reference runs used.  Caveat: `pom.xml` pins MATSim
-`2027.0-2026w45` while pt2matsim was originally built against MATSim `2024.0`; the class compiles
-against the 2027 API, whether it *runs* on that classpath is **UNVERIFIED**.  What *is* verified: the
-table builders read the original `.osm`/`.pbf`/GTFS data directly and reproduce every table byte for
-byte (step 2), so the pipeline is reproducible from original data everywhere except this one
-conversion step.
+Verified with JDK 25, MATSim 2027.0-2026w45 and pt2matsim 24.4 using the original Swiss GTFS ZIP
+and OSM extract. The regenerated network matched the reference after decompression. The filtered
+schedule XML matched after sorting the transfer relations. All 2,541 departure signatures and
+21,243 scheduled arrivals matched. Pass `--out DIR` to compare against existing inputs in a separate directory.
 
 **pt2matsim 24.4 loses the station dwell times** (`GtfsConverter.createTransitRouteStop` takes the
 *arrival* time for both offsets).  That is why the pipeline restores them in step 7 —
@@ -157,7 +153,7 @@ onto the five columns the run class reads, and the pipeline writes it as
 `matsim_input/<case>/vehicles_fs1.csv` (the name `run.properties` uses).  The generated file is
 **byte-identical** to the round-3 reference table (`md5 499eb6de…`).
 
-## Step 4 — The jar (`mvn -o clean package`)
+## Step 4 — The jar (`mvn clean package`)
 
 One shaded jar in the repository root (~111 MB), `Main-Class: ch.sbb.run.RunSwitzerlandRailway`.
 The patched railsim classes in `src/main/java` must be the only copies on the classpath: the shade
@@ -430,7 +426,7 @@ stale reservations, teleports); off-model resources are exempt when `boundaryCap
 | step | Olten | Switzerland |
 |---|---:|---:|
 | `prepare/build_tables.py` (all tables + case schedule) | 392 s | 335 s |
-| rolling stock + `mvn -o clean package` | 18 s | 17 s |
+| rolling stock + `mvn clean package` | 18 s | 17 s |
 | `TrackRouter` | 324 s | 1 297 s |
 | `prepare/fix_reversals.py` | 10 s | 25 s |
 | `prepare/restore_dwell.py` (two runs) | 51 s | 70 s |
@@ -507,7 +503,7 @@ round-3 tools' output **byte for byte**, md5 list there).
 A new lock, engine or speed-profile result changes **three places only**:
 
 1. `src/main/java/ch/sbb/run/…` or `.../qsimengine/…` (the lock/engine/controller sources) — a plain
-   file replacement, then `mvn -o clean package`;
+   file replacement, then `mvn clean package`;
 2. `matsim_input/<case>/run.properties` if a new switch is used (and `docs/assumptions.md` §6);
 3. the results tables: "Results" in `README.md` and "Results" here, plus the audit line.
 
