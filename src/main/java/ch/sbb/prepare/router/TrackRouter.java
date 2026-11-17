@@ -1702,14 +1702,16 @@ public final class TrackRouter {
         new MatsimVehicleWriter(veh).writeFile(outDir + "/transitVehicles.xml.gz");
 
         // -------- console summary
-        summary(st, arr, ext);
+        summary(st);
+        System.out.printf(Locale.ROOT, "network: %d nodes, %d links written%n",
+                onet.getNodes().size(), onet.getLinks().size());
     }
 
     static String linkIdOf(int code, Net net, ExtBuilder ext) {
         return code >= 0 ? Long.toString(net.linkId[code]) : ext.links.get(-1 - code).id;
     }
 
-    static void summary(Stats st, Job[] arr, ExtBuilder ext) {
+    static void summary(Stats st) {
         int nRev = 0, nRelax = 0, nOff = 0, nStops = 0, nPlat = 0, nSeg = 0, nRouteSeg = 0;
         double km = 0, wrong = 0, service = 0, offKm = 0;
         for (RouteStat r : st.routes) {
@@ -1726,10 +1728,10 @@ public final class TrackRouter {
         System.out.printf(Locale.ROOT, "off-model model: %d routes fully off-model, %d routes with a chain, %d segments (%d routes split), %d chains, %d off-model stops in chains, %d infeasible real legs -> off-model (%d kept), %d real stops without candidate%n",
                 statRoutesFullyOff, statRoutesWithChain, nSeg, nRouteSeg, statChains, statChainStops,
                 statInfeasibleSplit, statInfeasibleKept, statRealNoCand);
-        System.out.printf(Locale.ROOT, "off-model links: %d hops (+%d departure stubs), %.1f km, mean freespeed %.1f km/h (min %.1f, max %.1f), %d hops limited by the %.0f km/h cap%n",
-                statOffHops, statStubs, statOffKm, statOffSpeedSum / Math.max(1, statOffHops),
-                statOffSpeedMin, statOffSpeedMax, statOffHopsCapped, offVmaxMs * 3.6);
-        System.out.printf(Locale.ROOT, "network: %d nodes, %d links written; ext links %d%n",
-                ext.nodeIds.size(), 0, ext.links.size());
+        if (statOffHops > 0) {
+            System.out.printf(Locale.ROOT, "off-model links: %d hops (+%d departure stubs), %.1f km, mean freespeed %.1f km/h (min %.1f, max %.1f), %d hops limited by the %.0f km/h cap%n",
+                    statOffHops, statStubs, statOffKm, statOffSpeedSum / statOffHops,
+                    statOffSpeedMin, statOffSpeedMax, statOffHopsCapped, offVmaxMs * 3.6);
+        }
     }
 }
