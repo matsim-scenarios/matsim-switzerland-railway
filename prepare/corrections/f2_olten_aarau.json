@@ -1,0 +1,8 @@
+{
+  "name": "F2 Olten east approach (Aarau side): second track for the RE12 direction",
+  "why": "RE12 (Aarau->Olten) and IC5 (Olten->Aarau) are routed over ONE 1 424 m single-track chain (links 607503..330798, ways 1332417460 / 62311064 / 195008187), so they meet head-on 17 times a day (12 s overlap).  OSM has the parallel track (way 62311069, tracks=1, maxspeed 125, the other direction of the same double-track line) but the router never put it into its network - it is missing from matsim_input/tmp/network_osm.xml.gz's reduced form.  The run is copied for the RE12 direction only (offset 9 m, the OSM track spacing).",
+  "actions": [
+    {"type": "duplicate_run", "name": "Olten-Aarau second track (RE12 direction)",
+     "from": "607503", "to": "330798", "lines": ["RE12"], "offset": 9.0, "tag": "a2"}
+  ]
+}

@@ -523,3 +523,45 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/r,osx,java,linux,maven,python,eclipse,windows,intellij+all,jupyternotebooks
+# ---- pipeline (round 3, agent P3): everything prepare_case.sh and run_case.sh generate ----
+# Tracked in matsim_input/<case>/: config.xml and run.properties only.  Everything else below is
+# produced from original_data/ + matsim_input/tmp/ by scripts/prepare_case.sh, or by
+# scripts/run_case.sh.  (*.gz, *.jar, target/ and output/ are already ignored above.)
+/matsim_input/tables/
+/matsim_input/.slots/
+/matsim_input/*/vehicles_fs1.csv
+/matsim_input/*/vehicles_rs1.csv
+/matsim_input/*/routed/
+/matsim_input/*/work/
+/matsim_input/*/sim.log
+/matsim_input/*/router.log
+/matsim_input/*/mapping_check.json
+/matsim_input/*/mapping_check_fixed.json
+/matsim_input/*/check_mapping_fixed.log
+/matsim_input/*/score.json
+/matsim_input/*/score.txt
+/matsim_input/*/punct.csv
+/matsim_input/*/punct.json
+/matsim_input/*/punct.txt
+/matsim_input/*/late.csv
+/matsim_input/*/late.json
+/matsim_input/*/audit/
+/matsim_input/*/audit.log
+/matsim_input/*/deadlocks.txt
+/matsim_input/*/deadlocks.json
+/matsim_input/*/fix_reversals.log
+/matsim_input/*/restore_dwell_*.log
+/matsim_input/*/verify_dwell_*.log
+/matsim_input/*/verify_schedule.log
+/matsim_input/*/passing_loops.log
+/matsim_input/*/route_patches.log
+/matsim_input/*/fix_stops.log
+/matsim_input/*/stop_moves.csv
+/matsim_input/*/stop_moves.json
+/matsim_input/*/fix_offmodel_speed*.log
+/matsim_input/*/offmodel_speed_fix*.csv
+/matsim_input/*/fix_ext_length.log
+/matsim_input/*/ext_length_fix.csv
+
+# Per-case run lock
+matsim_input/*/.run.lock

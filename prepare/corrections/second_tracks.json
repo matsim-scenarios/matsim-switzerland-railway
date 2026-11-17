@@ -1,0 +1,20 @@
+{
+ "name": "passing loops (NL1 order)",
+ "jobs": [
+  {"action": "second_track", "name": "Courtemaîche", "uic": "8500127", "way": "160667300",
+   "nodeA": "419894840", "nodeB": "1643191619", "move": "B->A", "track": "3",
+   "osm": "matsim_input/tmp/network_osm.xml.gz", "move_stop": true},
+  {"action": "second_track", "name": "Courfaivre", "uic": "8500121", "way": "181479636",
+   "nodeA": "1219573139", "nodeB": "307370175", "move": "A->B", "track": "9",
+   "osm": "matsim_input/tmp/network_osm.xml.gz", "move_stop": true},
+  {"action": "second_track", "name": "St-Ursanne", "uic": "8500124", "way": "181483577",
+   "nodeA": "1919001689", "nodeB": "974708607", "move": "A->B", "track": "9",
+   "osm": "matsim_input/tmp/network_osm.xml.gz", "move_stop": true},
+  {"action": "second_track", "name": "Malters", "uic": "8508218", "way": "193061073",
+   "nodeA": "282758360", "nodeB": "282758409", "move": "A->B", "track": "9",
+   "osm": "matsim_input/tmp/network_osm.xml.gz", "move_stop": true},
+  {"action": "second_track", "name": "Les Geneveys-sur-Coffrane", "uic": "8504236",
+   "way": "507891447", "nodeA": "471596482", "nodeB": "662607448", "move": "A->B", "track": "9",
+   "osm": "matsim_input/tmp/network_osm.xml.gz", "move_stop": true}
+ ]
+}

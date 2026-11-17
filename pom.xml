@@ -14,7 +14,7 @@
         <!-- <matsim.version>15.0</matsim.version> -->
         <!-- <matsim.version>2024.0</matsim.version> -->
         <!-- <matsim.version>2025.0-SNAPSHOT</matsim.version> -->
-        <matsim.version>2025.0-2024w22</matsim.version>
+        <matsim.version>2027.0-2026w45</matsim.version>
 
         <log4j.version>2.20.0</log4j.version>
         <maven.compiler.source>21</maven.compiler.source>
@@ -124,7 +124,7 @@
 <!--				https://stackoverflow.com/questions/27429097/geotools-cannot-find-hsql-epsg-db-throws-error-nosuchauthoritycodeexception/27431381#27431381)-->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.2.2</version>
+				<version>3.6.2</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -146,6 +146,21 @@
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
 							</transformers>
 							<filters>
+								<!-- The patched engine in src/main/java must be the only copy of every
+								     ch.sbb.matsim.contrib.railsim.qsimengine class it provides: drop the
+								     copies shipped by the railsim artifact (RailsimEngine = SWARM-FIX
+								     engine, RailsimCalc = speed/target computation, PunctualProfileHook =
+								     just-in-time speed-profile hook; the hook is not in the artifact yet,
+								     the exclude keeps it that way). The jar must log
+								     "SWARM-FIX RailsimEngine active" at start-up. -->
+								<filter>
+									<artifact>ch.sbb.matsim.contrib:railsim</artifact>
+									<excludes>
+										<exclude>ch/sbb/matsim/contrib/railsim/qsimengine/RailsimEngine*.class</exclude>
+										<exclude>ch/sbb/matsim/contrib/railsim/qsimengine/RailsimCalc*.class</exclude>
+										<exclude>ch/sbb/matsim/contrib/railsim/qsimengine/PunctualProfileHook*.class</exclude>
+									</excludes>
+								</filter>
 								<filter>
 									<artifact>*:*</artifact>
 									<excludes>
