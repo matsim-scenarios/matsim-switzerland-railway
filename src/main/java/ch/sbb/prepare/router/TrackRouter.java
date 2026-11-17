@@ -410,7 +410,8 @@ public final class TrackRouter {
         }
         if (!errs.isEmpty()) {
             System.out.println("ROUTING ERRORS: " + errs.size());
-            for (int i = 0; i < Math.min(10, errs.size()); i++) System.out.println("  " + errs.get(i));
+            for (int i = 0; i < Math.min(10, errs.size()); i++) System.err.println("  " + errs.get(i));
+            throw new IllegalStateException("Routing failed for " + errs.size() + " route(s)");
         }
     }
 
@@ -521,7 +522,10 @@ public final class TrackRouter {
                 case "--offVmax": offVmaxMs = Double.parseDouble(a[++i]) / 3.6; break;
                 case "--offRuntimeFrac": offRuntimeFrac = Double.parseDouble(a[++i]); break;
                 case "--infeasibleSlack": infeasibleSlack = Double.parseDouble(a[++i]); break;
-                case "--threads": threads = Integer.parseInt(a[++i]); break;
+                case "--threads":
+                    threads = Integer.parseInt(a[++i]);
+                    if (threads < 1) throw new IllegalArgumentException("--threads must be positive");
+                    break;
                 case "--vmax": vmaxKmh = Double.parseDouble(a[++i]); break;
                 case "--relStrict": relStrict = Double.parseDouble(a[++i]); break;
                 case "--relBonus": baseParams.relBonus = Double.parseDouble(a[++i]); break;
