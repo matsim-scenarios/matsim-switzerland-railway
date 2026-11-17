@@ -115,9 +115,9 @@ tail -1 punct.txt
 echo "== audit $(date +%H:%M:%S)"
 python3 ../../scripts/audit_safety.py --exp "$(pwd)" --out audit > audit.log 2>&1 || { tail -5 audit.log >&2; echo "AUDIT FAILED" >&2; exit 7; }
 
-# ---- deadlock report (who blocks whom); cheap, from the events cache of the audit
+# ---- deadlock report (the script writes deadlocks.txt and deadlocks.json)
 echo "== deadlocks $(date +%H:%M:%S)"
-python3 ../../scripts/deadlocks.py "$(pwd)" > deadlocks.txt 2>&1 || { tail -5 deadlocks.txt >&2; exit 8; }
+python3 ../../scripts/deadlocks.py "$(pwd)" > /dev/null
 
 # disk hygiene: drop the per-iteration copies (they duplicate the events file)
 rm -rf output/ITERS output/tmp
