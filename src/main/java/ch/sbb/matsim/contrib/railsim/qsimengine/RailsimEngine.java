@@ -257,8 +257,7 @@ final class RailsimEngine implements Steppable {
 	private void updateAllPositions(double time) {
 		for (TrainState train : trainManager.getActiveTrains()) {
 			if (train.timestamp < time)
-				// This sample is never queued. The existing movement or reservation event owns the next update.
-				updatePosition(time, new UpdateEvent(train, UpdateEvent.Type.POSITION));
+				updateState(time, new UpdateEvent(train, UpdateEvent.Type.POSITION));
 		}
 	}
 
@@ -273,10 +272,8 @@ final class RailsimEngine implements Steppable {
 		// Do different updates depending on the type
 		switch (event.type) {
 			case DEPARTURE -> updateDeparture(time, event);
-			case POSITION -> {
-				updatePosition(time, event);
-				decideNextUpdate(event);
-			}
+			// A position sample is discarded. The queued movement or reservation event owns the next update.
+			case POSITION -> updatePosition(time, event);
 			case SPEED_CHANGE -> updateSpeed(time, event);
 			case ENTER_LINK, REVERSE_TRAIN -> enterLink(time, event);
 			case LEAVE_LINK -> leaveLink(time, event);
