@@ -35,15 +35,31 @@ done
 REF="$CASE_DIR/unmapped_schedule.xml.gz"
 [ -e "$REF" ] || { echo "missing $REF - run scripts/prepare_case.sh $CASE" >&2; exit 3; }
 
+# Scoring and cleanup write fixed filenames in this case. Keep the lock descriptor open
+# until the driver exits, including during post-processing.
+exec 9>"$CASE_DIR/.run.lock"
+python3 - <<'LOCK'
+import fcntl
+import sys
+
+try:
+    fcntl.flock(9, fcntl.LOCK_EX | fcntl.LOCK_NB)
+except BlockingIOError:
+    sys.exit("Another run is writing this case.")
+LOCK
+
 # ---- slot semaphore (shared with the project bench when it is present, otherwise local)
 SLOTDIR=${SLOTDIR:-}
 if [ -z "$SLOTDIR" ]; then
   if [ -d swarm/bench/slots ]; then SLOTDIR=swarm/bench/slots; else SLOTDIR=matsim_input/.slots; fi
 fi
 mkdir -p "$SLOTDIR"
+SLOTDIR=$(cd "$SLOTDIR" && pwd)
 SLOT=""
 release() { [ -n "$SLOT" ] && rm -rf "$SLOT"; }
-trap release EXIT INT TERM
+trap release EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 while [ -z "$SLOT" ]; do
   for i in $(seq 1 "$SLOTS"); do
     d="$SLOTDIR/slot$i"
@@ -92,16 +108,16 @@ EOF
 # ---- score: the bench scorer (schedule identity + late arrivals) and the round-3 metric
 echo "== score $(date +%H:%M:%S)"
 python3 ../../scripts/evaluate.py "$SCHED" "$EVENTS" --ref "../../$REF" --json score.json | tee score.txt
-python3 ../../scripts/punct.py "$(pwd)" --ref "../../$REF" > punct.txt 2>&1 || true
+python3 ../../scripts/punct.py "$(pwd)" --ref "../../$REF" > punct.txt 2>&1 || { tail -5 punct.txt >&2; exit 6; }
 tail -1 punct.txt
 
 # ---- physical-safety audit (E2/I2: 0 body overlaps, no unreserved body, no stale reservation)
 echo "== audit $(date +%H:%M:%S)"
-python3 ../../scripts/audit_safety.py --exp "$(pwd)" --out audit > audit.log 2>&1 || { tail -5 audit.log; echo "AUDIT FAILED"; }
+python3 ../../scripts/audit_safety.py --exp "$(pwd)" --out audit > audit.log 2>&1 || { tail -5 audit.log >&2; echo "AUDIT FAILED" >&2; exit 7; }
 
 # ---- deadlock report (who blocks whom); cheap, from the events cache of the audit
 echo "== deadlocks $(date +%H:%M:%S)"
-python3 ../../scripts/deadlocks.py "$(pwd)" > deadlocks.txt 2>&1 || true
+python3 ../../scripts/deadlocks.py "$(pwd)" > deadlocks.txt 2>&1 || { tail -5 deadlocks.txt >&2; exit 8; }
 
 # disk hygiene: drop the per-iteration copies (they duplicate the events file)
 rm -rf output/ITERS output/tmp

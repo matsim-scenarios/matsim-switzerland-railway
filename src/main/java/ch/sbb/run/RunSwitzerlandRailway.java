@@ -91,7 +91,7 @@ import ch.sbb.matsim.contrib.railsim.qsimengine.deadlocks.NoDeadlockAvoidance;
  * updateInterval      railsim update interval [s]            default: config value (10)
  * endTime             qsim end time, e.g. 36:00:00           default: config value (24:00:00)
  * resources           linkPair | block                       default linkPair
- * resources.file      block table for resources=block        default swarm/data/A05/segment_block.csv
+ * resources.file      block table for resources=block        default matsim_input/tables/A05/segment_block.csv
  * boundaryCapacity    capacity of links with boundaryExtension=true   default 1
  * deadlockAvoidance   default | sectionLock | interlocking | none   default default
  * sectionLock.dedup   on | off   default on  (E2: one claim per physical track per section)
@@ -110,7 +110,7 @@ public final class RunSwitzerlandRailway {
 	private static final String PROPERTIES_FILE = "run.properties";
 	private static final String LINK_ATTRIBUTE_OSM_WAY_ID = "osm:way:id";
 	private static final String LINK_ATTRIBUTE_BOUNDARY = "boundaryExtension";
-	private static final String DEFAULT_SEGMENT_BLOCK_FILE = "swarm/data/A05/segment_block.csv";
+	private static final String DEFAULT_SEGMENT_BLOCK_FILE = "matsim_input/tables/A05/segment_block.csv";
 
 	/** Free-run diagnostic (D2): capacity high enough that no two trains can block each other. Never a solution. */
 	static final int FREE_RUN_CAPACITY = 256;
@@ -673,7 +673,7 @@ public final class RunSwitzerlandRailway {
 
 		/**
 		 * Resolve a relative input path against the config directory and then its ancestors (an experiment directory
-		 * below the repository root can reference {@code swarm/data/A05/segment_block.csv}).
+		 * below the repository root can reference {@code matsim_input/tables/A05/segment_block.csv}).
 		 */
 		Path resolveInput(String path, String property) {
 			Path p = Paths.get(path);

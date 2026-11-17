@@ -61,6 +61,7 @@ import ch.sbb.matsim.contrib.railsim.events.RailsimTrainLeavesLinkEvent;
 import ch.sbb.matsim.contrib.railsim.qsimengine.disposition.DispositionResponse;
 import ch.sbb.matsim.contrib.railsim.qsimengine.disposition.TrainDisposition;
 import ch.sbb.matsim.contrib.railsim.qsimengine.resources.RailLink;
+import ch.sbb.matsim.contrib.railsim.qsimengine.resources.ResourceType;
 import ch.sbb.matsim.contrib.railsim.qsimengine.resources.RailResourceManager;
 
 /**
@@ -721,6 +722,15 @@ final class RailsimEngine implements Steppable {
 		applyReverseGeometry(state, computeReverseGeometry(state, nextLink, nextRouteIdx, previousHeadLink,
 			previousHeadPosition, previousTailLink, previousTailPosition));
 
+		// The approved distance is measured from the head. The reversal moves the head forward along the
+		// departure route without driving, so the distance it jumped is no longer ahead of the train.
+		double jump = resources.getLink(previousHeadLink).length - previousHeadPosition;
+		for (int i = nextRouteIdx - 1; i < state.routeIdx - 1; i++) {
+			jump += state.route.get(i).length;
+		}
+		jump += state.headPosition;
+		state.approvedDist = Math.max(0, state.approvedDist - jump);
+
 		// Keep the time-distance head reference aligned when the train flips direction.
 		state.cumulativeDistance += state.train.length();
 
@@ -826,6 +836,9 @@ final class RailsimEngine implements Steppable {
 
 	/** SWARM-FIX (E1): is the physical track of {@code link} reserved by this train (any direction)? */
 	private boolean isHeld(TrainState state, RailLink link) {
+		if (link.getResource().getType() != ResourceType.fixedBlock) {
+			return resources.isBlockedBy(link, state);
+		}
 		for (RailLink other : link.getResource().getLinks()) {
 			if (resources.isBlockedBy(other, state)) {
 				return true;
@@ -906,7 +919,10 @@ final class RailsimEngine implements Steppable {
 				continue;
 			}
 
-			disposition.unblockRailLink(time, state.driver, link);
+			if (link.minimumHeadwayTime == 0)
+				disposition.unblockRailLink(time, state.driver, link);
+			else
+				updateQueue.add(new UpdateEvent(state, link, time));
 		}
 	}
 
@@ -1019,12 +1035,35 @@ final class RailsimEngine implements Steppable {
 	 * i.e. when the train no longer occupies that physical track in any direction.
 	 */
 	private void releaseResourceSiblings(double time, TrainState state, RailLink released) {
+
+		// A moving block reservation is kept per link and distance and is released link by link when
+		// the tail leaves it. Only a fixed block resource blocks all of its links together.
+		if (released.getResource().getType() != ResourceType.fixedBlock)
+			return;
+
+		// Usually the train holds no other link of the resource; skip the route scans below then.
+		boolean holdsSibling = false;
+		for (RailLink other : released.getResource().getLinks()) {
+			if (other != released && resources.isBlockedBy(other, state)) {
+				holdsSibling = true;
+				break;
+			}
+		}
+		if (!holdsSibling)
+			return;
+
 		Set<Id<Link>> bodyIds = new HashSet<>();
 		for (RailLink link : bodyLinks(state)) {
 			bodyIds.add(link.getLinkId());
 		}
+
+		Set<Id<Link>> ahead = new HashSet<>();
+		for (int i = Math.max(0, state.routeIdx); i < state.route.size(); i++) {
+			ahead.add(state.route.get(i).getLinkId());
+		}
+
 		for (RailLink other : released.getResource().getLinks()) {
-			if (other == released || bodyIds.contains(other.getLinkId())) {
+			if (other == released || bodyIds.contains(other.getLinkId()) || ahead.contains(other.getLinkId())) {
 				continue;
 			}
 			if (resources.isBlockedBy(other, state)) {
@@ -1045,19 +1084,22 @@ final class RailsimEngine implements Steppable {
 	/**
 	 * SWARM-FIX (E1): body links for an arbitrary (possibly not yet applied) geometry.
 	 */
-	private List<RailLink> bodyLinks(List<RailLink> route, int routeIdx, double headPosition, double length) {
+	static List<RailLink> bodyLinks(List<RailLink> route, int routeIdx, double headPosition, double length) {
+
 		List<RailLink> body = new ArrayList<>();
 		double remaining = length;
-		double pos = headPosition;
+
 		for (int i = routeIdx - 1; i >= 0; i--) {
 			RailLink link = route.get(i);
 			body.add(link);
-			if (remaining <= pos + 1e-6) {
+			// The head covers its link up to the head position, every link behind it completely.
+			double covered = i == routeIdx - 1 ? headPosition : link.length;
+			if (FuzzyUtils.lessEqualThan(remaining, covered)) {
 				break;
 			}
-			remaining -= pos;
-			pos = link.length;
+			remaining -= covered;
 		}
+
 		return body;
 	}
 
@@ -1363,8 +1405,8 @@ final class RailsimEngine implements Steppable {
 					allowed = link.getAllowedFreespeed(state.driver);
 			}
 
-			// Only need to consider if speed is lower than the allowed speed
-			if (!FuzzyUtils.equals(dist, 0) && allowed <= minAllowed) {
+			// A future limit above the advised speed cannot require braking.
+			if (!FuzzyUtils.equals(dist, 0) && allowed <= minAllowed && allowed <= advisedSpeed) {
 				RailsimCalc.SpeedTarget target = RailsimCalc.calcTargetSpeed(dist, state.train.acceleration(), state.train.deceleration(),
 					state.speed, advisedSpeed, Math.min(state.allowedMaxSpeed, allowed));
 

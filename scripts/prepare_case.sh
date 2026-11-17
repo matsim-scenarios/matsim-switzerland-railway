@@ -12,7 +12,7 @@
 #                           produces -- WITHOUT the station dwell times)
 #   3. rolling stock        tables/RS1/vehicles_rs1.csv               -> matsim_input/<case>/vehicles_fs1.csv
 #                           (round 3: acceleration = mean 0->100 km/h, agent FS1)
-#   4. build the jar        mvn -o clean package                     -> matsim-switzerland-railway-<ver>.jar
+#   4. build the jar        mvn clean package                     -> matsim-switzerland-railway-<ver>.jar
 #   5. track assignment     ch.sbb.prepare.router.TrackRouter        -> routed/  (G3's router: passing
 #                           loops, corridor rule R7c, off-model track for the Switzerland case)
 #   6. reversal geometry    prepare/fix_reversals.py                 -> routed/transitSchedule.xml.gz
@@ -40,7 +40,7 @@ case "$CASE" in
   *) echo "usage: $0 <olten|switzerland>" >&2; exit 2 ;;
 esac
 
-MVN=${MVN:-$HOME/.m2/wrapper/dists/apache-maven-3.9.16/56ba1f9f/bin/mvn}
+MVN=${MVN:-mvn}
 PY=${PY:-uv run --python 3.12 --with osmium --with pyproj --with numpy --with scipy --with shapely python}
 HEAP=${HEAP:-10g}
 THREADS=${THREADS:-}
@@ -84,11 +84,11 @@ cp -f matsim_input/tables/RS1/vehicles_rs1.csv "$DIR/vehicles_fs1.csv"
 # ---- 4. jar
 JAR=$(ls -1t matsim-switzerland-railway-*.jar 2>/dev/null | head -1 || true)
 if [ -z "${SKIP_BUILD:-}" ]; then
-  echo "== 4. mvn -o clean package $(date +%H:%M:%S)"
-  $MVN -o -q -DskipTests clean package
+  echo "== 4. mvn clean package $(date +%H:%M:%S)"
+  "$MVN" -q -DskipTests clean package
   JAR=$(ls -1t matsim-switzerland-railway-*.jar | head -1)
 fi
-[ -n "$JAR" ] || { echo "no jar - run: $MVN -o package" >&2; exit 4; }
+[ -n "$JAR" ] || { echo "no jar - run: $MVN package" >&2; exit 4; }
 
 # ---- 5. track assignment
 # G3's router: passing loops on, corridor rule R7c pinned against R9, off-model track for the
