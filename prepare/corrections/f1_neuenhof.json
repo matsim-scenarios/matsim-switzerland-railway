@@ -1,0 +1,8 @@
+{
+  "name": "F1 Neuenhof / Heitersberg tunnel: block sections instead of one 3.3 km link",
+  "why": "OSM way 83270426 (bore A, tracks=1, tunnel=yes, railway:etcs=1) and way 4257794 (bore B) are one track per direction; the router models the 3 306 m bore as ONE railSim resource, so the IC1/IC5 pair that the timetable books 25-66 s apart cannot follow each other, although block signalling (ETCS) allows it.  Splitting the long link into 6 block sections of 551 m (14 s at 140 km/h) reproduces that.",
+  "actions": [
+    {"type": "split_link", "name": "Heitersberg bore B (IC1 direction)", "link": "366010", "parts": 6},
+    {"type": "split_link", "name": "Heitersberg bore A (IC5 direction)", "link": "387856", "parts": 6}
+  ]
+}
