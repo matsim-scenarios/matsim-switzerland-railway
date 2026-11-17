@@ -35,6 +35,19 @@ done
 REF="$CASE_DIR/unmapped_schedule.xml.gz"
 [ -e "$REF" ] || { echo "missing $REF - run scripts/prepare_case.sh $CASE" >&2; exit 3; }
 
+# Scoring and cleanup write fixed filenames in this case. Keep the lock descriptor open
+# until the driver exits, including during post-processing.
+exec 9>"$CASE_DIR/.run.lock"
+python3 - <<'LOCK'
+import fcntl
+import sys
+
+try:
+    fcntl.flock(9, fcntl.LOCK_EX | fcntl.LOCK_NB)
+except BlockingIOError:
+    sys.exit("Another run is writing this case.")
+LOCK
+
 # ---- slot semaphore (shared with the project bench when it is present, otherwise local)
 SLOTDIR=${SLOTDIR:-}
 if [ -z "$SLOTDIR" ]; then
