@@ -33,13 +33,17 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.ConfigWriter;
+import org.matsim.core.network.NetworkUtils;
+import org.matsim.core.network.algorithms.MultimodalNetworkCleaner;
 import org.matsim.core.utils.collections.CollectionUtils;
+import org.matsim.pt.transitSchedule.api.Departure;
 import org.matsim.pt.transitSchedule.api.TransitLine;
 import org.matsim.pt.transitSchedule.api.TransitRoute;
 import org.matsim.pt.transitSchedule.api.TransitRouteStop;
 import org.matsim.pt.transitSchedule.api.TransitSchedule;
 import org.matsim.pt2matsim.config.OsmConverterConfigGroup;
 import org.matsim.pt2matsim.config.PublicTransitMappingConfigGroup;
+import org.matsim.pt2matsim.mapping.linkCandidateCreation.LinkCandidateCreatorStandard;
 import org.matsim.pt2matsim.run.CreateDefaultOsmConfig;
 import org.matsim.pt2matsim.run.CreateDefaultPTMapperConfig;
 import org.matsim.pt2matsim.run.Gtfs2TransitSchedule;
@@ -49,7 +53,13 @@ import org.matsim.pt2matsim.tools.NetworkTools;
 import org.matsim.pt2matsim.tools.ScheduleTools;
 import org.matsim.pt2matsim.tools.debug.ScheduleCleaner;
 import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
+import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.Vehicles;
+
+import ch.sbb.prepare.platform.OsmStopPositionNetworkEnricher;
+import ch.sbb.prepare.platform.PlatformAwarePTMapper;
+import ch.sbb.prepare.platform.RailPlatformLinkCandidateCreator;
+import ch.sbb.prepare.platform.RailPlatformStopShifter;
 
 public final class GenerateRailsimInput {
     private static final Logger log = LogManager.getLogger(GenerateRailsimInput.class);
@@ -65,20 +75,23 @@ public final class GenerateRailsimInput {
     private static final String removeLinesOutsideThisArea = "original_data/shp/switzerland/switzerland.shp";
     
     // optional: filter by line name prefix
-    private static final Set<String> transitLineNamePrefixesToKeep = CollectionUtils.stringToSet("IC,IR,EC,RE");
+    private static final Set<String> transitLineNamePrefixesToKeep = CollectionUtils.stringToSet("IC");
     // private static final Set<String> transitLineNamePrefixesToKeep = null;
 
 	private static final String EPSG2056 = "EPSG:2056";
+
+	// rail stops: use OSM stop positions (railway=stop, local_ref = platform) to place the halting train along the platform, see issue #16
+	private static final boolean PLACE_RAIL_STOPS_ON_OSM_PLATFORMS = true;
 	
 	// matsim input files to write
-	private static final String MATSIM_INPUT = "matsim_input/";
+	private static final String MATSIM_INPUT = "matsim_input_new/";
 	private static final String VEHICLES_FINAL = MATSIM_INPUT + "transitVehicles.xml.gz";
 	private static final String NETWORK_FINAL = MATSIM_INPUT + "transitNetwork.xml.gz";
 	private static final String SCHEDULE_FINAL = MATSIM_INPUT + "transitSchedule.xml.gz";
 	
 	// intermediate files
 	
-	private static final String MATSIM_INPUT_TMP = "matsim_input/tmp/";
+	private static final String MATSIM_INPUT_TMP = MATSIM_INPUT + "tmp/";
     
 	private static final String PT2MATSIM_OSM_CONVERTER_CONFIG_DEFAULT = MATSIM_INPUT_TMP + "pt2matsim_osm_converter_config_default.xml";
 	private static final String PT2MATSIM_OSM_CONVERTER_CONFIG = MATSIM_INPUT_TMP + "pt2matsim_osm_converter_config.xml";
@@ -108,13 +121,65 @@ public final class GenerateRailsimInput {
 		// 2. Convert an osm map to a MATSim network
 		createOsmConfigFile( PT2MATSIM_OSM_CONVERTER_CONFIG );
 		Osm2MultimodalNetwork.main(new String[]{ PT2MATSIM_OSM_CONVERTER_CONFIG });
+		
+		// neu: sonst macht uns Liestal probleme...
+		removeRailwayTypes(Set.of("light_rail"));
+		removeRailwayTypes(Set.of("tram"));
 
 		// 3. Map the schedule onto the network
 		createMapperConfigFile(PT2MATSIM_MAPPER_CONFIG);
-		PublicTransitMapper.main(new String[]{PT2MATSIM_MAPPER_CONFIG});
+		mapScheduleToNetwork();
 		
 		trimSchedule();
 		writeFinalFiles();
+	}
+	
+	private static void removeRailwayTypes(Set<String> railwayTypes) {
+	    Network network = NetworkTools.readNetwork(NETWORK_OSM);
+	    network.getLinks().values().stream()
+	        .filter(l -> railwayTypes.contains(l.getAttributes().getAttribute("osm:way:railway")))
+	        .map(Link::getId).toList()
+	        .forEach(network::removeLink);
+	    new MultimodalNetworkCleaner(network).run(Set.of("rail")); // entfernt abgehängte Reste
+	    NetworkTools.writeNetwork(network, NETWORK_OSM);
+	}
+
+	/**
+	 * If {@link #PLACE_RAIL_STOPS_ON_OSM_PLATFORMS} is disabled, this is identical to {@link PublicTransitMapper}.
+	 */
+	static void mapScheduleToNetwork() {
+		if (!PLACE_RAIL_STOPS_ON_OSM_PLATFORMS) {
+			PublicTransitMapper.main(new String[]{PT2MATSIM_MAPPER_CONFIG});
+			return;
+		}
+		PublicTransitMappingConfigGroup config = PublicTransitMappingConfigGroup.loadConfig(PT2MATSIM_MAPPER_CONFIG);
+		TransitSchedule schedule = ScheduleTools.readTransitSchedule(config.getInputScheduleFile());
+		Network network = NetworkTools.readNetwork(config.getInputNetworkFile());
+		Vehicles vehicles = ScheduleTools.readVehicles(VEHICLES_GTFS);
+
+		OsmStopPositionNetworkEnricher.enrich(network, INPUT_OSM_FILE);
+		RailPlatformLinkCandidateCreator linkCandidateCreator = new RailPlatformLinkCandidateCreator(
+				new LinkCandidateCreatorStandard(schedule, network, config), schedule, network,
+				config.getTransportModeAssignment(), Set.of("rail"),
+				RailPlatformLinkCandidateCreator::platformCodeFromStopId,
+				RailPlatformLinkCandidateCreator.DEFAULT_SEARCH_RADIUS);
+
+		PlatformAwarePTMapper.run(schedule, network, config, linkCandidateCreator,
+				mapped -> RailPlatformStopShifter.run(mapped, network, linkCandidateCreator, route -> trainLength(route, vehicles)));
+
+		ScheduleTools.writeTransitSchedule(schedule, config.getOutputScheduleFile());
+		NetworkTools.writeNetwork(network, config.getOutputNetworkFile());
+	}
+
+	private static double trainLength(TransitRoute route, Vehicles vehicles) {
+		double length = 0;
+		for (Departure departure : route.getDepartures().values()) {
+			Vehicle vehicle = vehicles.getVehicles().get(departure.getVehicleId());
+			if (vehicle != null) {
+				length = Math.max(length, vehicle.getType().getLength());
+			}
+		}
+		return length > 0 ? length : 200.0;
 	}
 
 	private static void writeFinalFiles() {

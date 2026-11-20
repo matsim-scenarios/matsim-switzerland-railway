@@ -523,3 +523,7 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/r,osx,java,linux,maven,python,eclipse,windows,intellij+all,jupyternotebooks
+/output_new/
+/output_old/
+/matsim_input_new/
+/matsim_input_old/

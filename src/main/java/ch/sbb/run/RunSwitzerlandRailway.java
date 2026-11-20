@@ -37,6 +37,7 @@ import org.matsim.vehicles.VehicleType;
 
 import ch.sbb.matsim.contrib.railsim.RailsimModule;
 import ch.sbb.matsim.contrib.railsim.RailsimUtils;
+import ch.sbb.matsim.contrib.railsim.config.RailsimConfigGroup;
 import ch.sbb.matsim.contrib.railsim.qsimengine.RailsimQSimModule;
 
 public final class RunSwitzerlandRailway {
@@ -48,11 +49,14 @@ public final class RunSwitzerlandRailway {
 		if (args.length != 0) {
 			configFilename = args[0];
 		} else {
-			configFilename = "matsim_input/config.xml";
+			configFilename = "matsim_input_old/config.xml";
 		}
 
 		Config config = ConfigUtils.loadConfig(configFilename);
 		config.controller().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);		
+
+		RailsimConfigGroup railsimConfig = ConfigUtils.addOrGetModule(config, RailsimConfigGroup.class);
+		railsimConfig.updateInterval = 1.0;
 		
 		Scenario scenario = ScenarioUtils.loadScenario(config);
 		
