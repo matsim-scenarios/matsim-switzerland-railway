@@ -96,6 +96,15 @@ Verified with JDK 25, MATSim 2027.0-2026w45 and pt2matsim 24.4 using the origina
 and OSM extract. The regenerated network matched the reference after decompression. The filtered
 schedule XML matched after sorting the transfer relations. All 2,541 departure signatures and
 21,243 scheduled arrivals matched. Pass `--out DIR` to compare against existing inputs in a separate directory.
+The project now uses pt2matsim 26.12.1. With the same inputs, it writes a network and filtered schedule
+identical to those from 24.4 after decompression.
+
+**Optional alternative to steps 2–15:** `ch.sbb.prepare.platform.GeneratePlatformMappedInput` maps
+the step-1 schedule with pt2matsim's platform-aware mapper. The GTFS platform code goes into
+the pt2matsim platform-code attribute of each stop facility, and stops are placed on OSM platform links. The output goes to
+`matsim_input/platform/` and is run with `matsim_input/platform/config.xml`. This path produces a
+simpler, uncorrected input with no track assignment, corrections or the checks from steps 2–15. The
+default pipeline does not use it.
 
 **pt2matsim 24.4 loses the station dwell times** (`GtfsConverter.createTransitRouteStop` takes the
 *arrival* time for both offsets).  That is why the pipeline restores them in step 7 —

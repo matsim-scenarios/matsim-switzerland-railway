@@ -103,6 +103,21 @@ Details and measured times: `docs/pipeline.md`.  The original pt2matsim class
 (`java -cp <jar> ch.sbb.prepare.GenerateRailsimInput olten`); it no longer contains the old
 shortest-path mapping.
 
+##### Optional: pt2matsim platform mapping instead of steps 2–15
+
+`ch.sbb.prepare.platform.GeneratePlatformMappedInput` is an alternative to the `TrackRouter`
+chain. It maps the filtered schedule of step 1 with pt2matsim's shortest-path mapper. Each rail
+stop is placed on the OSM stop position (`railway=stop`, `local_ref`) of its GTFS platform. None of
+the reviewed corrections in `prepare/` are applied. The default chain is unchanged.
+
+```bash
+java -Xmx16g -cp matsim-switzerland-railway-1.0.0-SNAPSHOT.jar ch.sbb.prepare.platform.GeneratePlatformMappedInput
+java -Xmx12g -cp matsim-switzerland-railway-1.0.0-SNAPSHOT.jar ch.sbb.run.RunSwitzerlandRailway matsim_input/platform/config.xml
+```
+
+It reads `matsim_input/tmp/` and writes a runnable scenario to `matsim_input/platform/`
+(`--osm`, `--tmp` and `--out` override the paths).
+
 ----
 
 ### Run the MATSim Switzerland Railway scenario

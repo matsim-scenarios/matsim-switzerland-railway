@@ -78,7 +78,7 @@
 		<dependency>
         	<groupId>org.matsim</groupId>
         	<artifactId>pt2matsim</artifactId>
-        	<version>24.4</version>
+        	<version>26.12.1</version>
     	</dependency>
   
         <dependency>
