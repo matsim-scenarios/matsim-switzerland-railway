@@ -562,3 +562,6 @@ $RECYCLE.BIN/
 /matsim_input/*/offmodel_speed_fix*.csv
 /matsim_input/*/fix_ext_length.log
 /matsim_input/*/ext_length_fix.csv
+
+# Per-case run lock
+matsim_input/*/.run.lock
