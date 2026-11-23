@@ -565,3 +565,6 @@ $RECYCLE.BIN/
 
 # Per-case run lock
 matsim_input/*/.run.lock
+
+# Optional pt2matsim platform mapping (GeneratePlatformMappedInput): config.xml and run.properties tracked
+/matsim_input/platform/tmp/
